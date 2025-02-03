@@ -1,4 +1,4 @@
-import * as schema from './schema'
+import * as schema from "@/db/schema";
 
 import { drizzle } from 'drizzle-orm/vercel-postgres'
 import { sql } from '@vercel/postgres'
