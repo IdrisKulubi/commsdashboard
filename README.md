@@ -8,7 +8,6 @@ A modern social media analytics dashboard built with Next.js 15, React 19, and T
 - 🎨 Modern UI with Shadcn UI and Tailwind CSS
 - 🌙 Dark/Light mode support
 - 📱 Fully responsive design
-- 🔒 Secure authentication
 - ⚡ Real-time data updates
 
 ## Tech Stack
@@ -49,8 +48,7 @@ pnpm install
 3. Create a `.env.local` file in the root directory and add your environment variables:
 ```env
 # Add your environment variables here
-NEXTAUTH_SECRET=your_secret
-NEXTAUTH_URL=http://localhost:3000
+POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/postgres
 ```
 
 4. Start the development server:
