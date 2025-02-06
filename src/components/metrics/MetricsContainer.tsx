@@ -21,7 +21,7 @@ export async function MetricsContainer({
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <SocialMediaMetrics
-          platform={platform}
+          platform={platform as "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK"}
           businessUnit={businessUnit}
           startDate={dateRange.from}
           endDate={dateRange.to}
@@ -29,7 +29,7 @@ export async function MetricsContainer({
         />
         <WebsiteMetrics
           businessUnit={businessUnit}
-          startDate={dateRange.from}
+          startDate={dateRange.from as Date}
           endDate={dateRange.to}
           className="w-full"
         />

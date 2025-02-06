@@ -1,52 +1,81 @@
+"use client";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MetricsTable } from "@/components/shared/MetricsTable";
+import { ViewToggle } from "@/components/shared/ViewToggle";
+import { useState } from "react";
 import {
-  LineChart,
-  Line,
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from "date-fns";
 
 interface MetricsChartProps {
   title: string;
-  data: any[];
-  dataKey: string;
-  xAxisKey?: string;
+  data: Array<{
+    date: Date;
+    [key: string]: number | Date;
+  }>;
+  metrics: string[];
   className?: string;
+  formatValue?: (value: number | Date) => string;
 }
 
 export function MetricsChart({
   title,
   data,
-  dataKey,
-  xAxisKey = "date",
+  metrics,
   className,
+  formatValue,
 }: MetricsChartProps) {
+  const [view, setView] = useState<"chart" | "table">("chart");
+
   return (
     <Card className={className}>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{title}</CardTitle>
+        <ViewToggle view={view} onViewChange={setView} />
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={xAxisKey} />
-              <YAxis />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey={dataKey}
-                stroke="#8884d8"
-                activeDot={{ r: 8 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {view === "chart" ? (
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data}>
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) => format(new Date(date), "MMM d")}
+                />
+                <YAxis />
+                <Tooltip
+                  labelFormatter={(date) =>
+                    format(new Date(date), "MMMM d, yyyy")
+                  }
+                />
+                {metrics.map((metric, index) => (
+                  <Area
+                    key={metric}
+                    type="monotone"
+                    dataKey={metric}
+                    stackId="1"
+                    stroke={`hsl(${index * 60}, 70%, 50%)`}
+                    fill={`hsl(${index * 60}, 70%, 50%)`}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <MetricsTable
+            data={data}
+            metrics={metrics}
+            formatValue={formatValue}
+          />
+        )}
       </CardContent>
     </Card>
   );
-} 
+}

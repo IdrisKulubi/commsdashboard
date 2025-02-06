@@ -14,7 +14,7 @@ import { format } from "date-fns";
 // Define metric types based on your database schema
 type MetricData = {
   date: Date;
-  [key: string]: number | Date | null;
+  [key: string]: number | Date | string | null;
 };
 
 interface ComparisonChartProps {

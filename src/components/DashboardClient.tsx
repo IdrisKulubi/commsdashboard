@@ -4,6 +4,8 @@ import { useState } from "react";
 import { DateRange } from "react-day-picker";
 import { MetricsFilter } from "@/components/shared/MetricsFilter";
 import { DateRangeSelector } from "@/components/shared/DateRangeSelector";
+import { PlusCircle } from "lucide-react";
+import Link from "next/link";
 import {
   PLATFORMS,
   BUSINESS_UNITS,
@@ -12,6 +14,7 @@ import {
   NewsletterMetric,
 } from "@/db/schema";
 import { ComparisonChart } from "@/components/shared/ComparisonChart";
+import { Button } from "@/components/ui/button";
 
 type DashboardClientProps = {
   initialDateRange: { from: Date; to: Date };
@@ -33,6 +36,7 @@ export function DashboardClient({
     BUSINESS_UNITS.ASM
   );
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [metrics, setMetrics] = useState(initialData);
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
@@ -42,7 +46,15 @@ export function DashboardClient({
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+          <Link href="/add-metrics">
+            <Button variant="outline" size="sm">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Metrics
+            </Button>
+          </Link>
+        </div>
         <div className="flex space-x-4">
           <MetricsFilter
             platform={platform}

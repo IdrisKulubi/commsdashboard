@@ -79,6 +79,26 @@ export const newsletterMetrics = pgTable("newsletter_metrics", {
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+// Social Media Engagement Metrics Table
+export const socialEngagementMetrics = pgTable("social_engagement_metrics", {
+  id: serial("id").primaryKey(),
+  platform: text("platform", {
+    enum: ["FACEBOOK", "INSTAGRAM", "LINKEDIN", "TIKTOK"] as const,
+  }).notNull(),
+  businessUnit: text("business_unit", {
+    enum: ["ASM", "IACL", "EM"] as const,
+  }).notNull(),
+  date: timestamp("date").notNull(),
+  likes: integer("likes").default(0),
+  comments: integer("comments").default(0),
+  shares: integer("shares").default(0),
+  saves: integer("saves").default(0),
+  clicks: integer("clicks").default(0),
+  engagementRate: decimal("engagement_rate", { precision: 5, scale: 2 }), // Stores percentage as decimal
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
 // Types for TypeScript
 export type SocialMetric = typeof socialMetrics.$inferSelect;
 export type NewSocialMetric = typeof socialMetrics.$inferInsert;
@@ -88,3 +108,8 @@ export type NewWebsiteMetric = typeof websiteMetrics.$inferInsert;
 
 export type NewsletterMetric = typeof newsletterMetrics.$inferSelect;
 export type NewNewsletterMetric = typeof newsletterMetrics.$inferInsert;
+
+export type SocialEngagementMetric =
+  typeof socialEngagementMetrics.$inferSelect;
+export type NewSocialEngagementMetric =
+  typeof socialEngagementMetrics.$inferInsert;

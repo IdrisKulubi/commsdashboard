@@ -5,6 +5,8 @@ import { startOfYear, endOfYear } from "date-fns";
 interface WebsiteMetricsProps {
   businessUnit: "ASM" | "IACL" | "EM";
   className?: string;
+  startDate: Date;
+  endDate: Date;
 }
 
 export async function WebsiteMetrics({
