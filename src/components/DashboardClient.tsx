@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DateRange } from "react-day-picker";
 import { MetricsFilter } from "@/components/shared/MetricsFilter";
 import { DateRangeSelector } from "@/components/shared/DateRangeSelector";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, BarChart } from "lucide-react";
 import Link from "next/link";
 import {
   PLATFORMS,
@@ -15,6 +15,7 @@ import {
 } from "@/db/schema";
 import { ComparisonChart } from "@/components/shared/ComparisonChart";
 import { Button } from "@/components/ui/button";
+import { ColumnDef } from "@tanstack/react-table";
 
 type DashboardClientProps = {
   initialDateRange: { from: Date; to: Date };
@@ -23,6 +24,9 @@ type DashboardClientProps = {
     websiteMetrics: WebsiteMetric[];
     newsletterMetrics: NewsletterMetric[];
   };
+  socialColumns: ColumnDef<SocialMetric>[];
+  websiteColumns: ColumnDef<WebsiteMetric>[];
+  newsletterColumns: ColumnDef<NewsletterMetric>[];
 };
 
 export function DashboardClient({
@@ -48,12 +52,20 @@ export function DashboardClient({
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-          <Link href="/add-metrics">
-            <Button variant="outline" size="sm">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Metrics
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/add-metrics">
+              <Button variant="outline" size="sm">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Metrics
+              </Button>
+            </Link>
+            <Link href="/analytics">
+              <Button variant="outline" size="sm">
+                <BarChart className="h-4 w-4 mr-2" />
+                Detailed Analytics
+              </Button>
+            </Link>
+          </div>
         </div>
         <div className="flex space-x-4">
           <MetricsFilter
@@ -73,7 +85,7 @@ export function DashboardClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Social Media Metrics */}
         <ComparisonChart
           title={`${platform} Metrics - ${businessUnit}`}

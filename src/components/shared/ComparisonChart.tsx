@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
+import { useTheme } from "next-themes";
 
 // Define metric types based on your database schema
 type MetricData = {
@@ -36,11 +37,23 @@ export function ComparisonChart({
   className,
   dateFormat = "MMM yyyy",
 }: ComparisonChartProps) {
+  const { theme } = useTheme();
+  const textColor = theme === "dark" ? "#ffffff" : "#000000";
+  const gridColor = theme === "dark" ? "#374151" : "#e5e7eb";
+
   // Format the data for the chart
   const formattedData = data.map((item) => ({
     ...item,
     date: format(new Date(item.date), dateFormat),
   }));
+
+ 
+
+  const formatValue = (value: number) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return value;
+  };
 
   return (
     <Card className={className}>
@@ -52,32 +65,41 @@ export function ComparisonChart({
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={formattedData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={xAxisKey} tick={{ fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis 
+                dataKey={xAxisKey} 
+                tick={{ fill: textColor }}
+                stroke={textColor}
+              />
               <YAxis
-                tick={{ fontSize: 12 }}
-                width={80}
-                tickFormatter={(value) =>
-                  new Intl.NumberFormat("en-US", {
-                    notation: "compact",
-                    compactDisplay: "short",
-                  }).format(value)
-                }
+                tick={{ fill: textColor }}
+                stroke={textColor}
+                tickFormatter={(value) => formatValue(Number(value)) as string}
               />
               <Tooltip
-                formatter={(value: number) =>
-                  new Intl.NumberFormat("en-US").format(value)
-                }
+                contentStyle={{
+                  backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
+                  borderColor: gridColor,
+                  borderRadius: "8px",
+                }}
+                formatter={(value: number) => new Intl.NumberFormat().format(value)}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ paddingTop: 20 }}
+                formatter={(value) => (
+                  <span style={{ color: textColor }}>
+                    {value.replace(/([A-Z])/g, ' $1').trim()}
+                  </span>
+                )}
+              />
               {metrics.map((metric, index) => (
                 <Bar
-                  key={metric}
+                  key={`${metric}-${index}`}
                   dataKey={metric}
                   fill={colors[index % colors.length]}
-                  name={metric.charAt(0).toUpperCase() + metric.slice(1)}
+                  name={typeof metric === 'string' ? metric.replace(/([A-Z])/g, ' $1').trim() : String(metric)}
                 />
               ))}
             </BarChart>

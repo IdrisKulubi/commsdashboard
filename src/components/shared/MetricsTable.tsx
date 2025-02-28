@@ -1,6 +1,12 @@
 "use client";
 
 import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
   Table,
   TableBody,
   TableCell,
@@ -8,55 +14,48 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
 
-interface MetricsTableProps {
-  data: Array<{
-    date: Date;
-    [key: string]: number | Date;
-  }>;
-  metrics: string[];
-  formatValue?: (value: number | Date) => string;
-
+interface MetricsTableProps<T> {
+  data: T[];
+  columns: ColumnDef<T>[];
+  className?: string;
 }
 
-export function MetricsTable({
+export function MetricsTable<T>({
   data,
-  metrics,
-  formatValue,
-}: MetricsTableProps) {
-  const defaultFormatValue = (value: number | Date) => {
-    if (typeof value === "number") {
-      return value.toLocaleString();
-
-    }
-    if (value instanceof Date) {
-      return format(value, "MMM d, yyyy");
-    }
-    return String(value);
-  };
-
-  const formatter = formatValue || defaultFormatValue;
+  columns,
+  className,
+}: MetricsTableProps<T>) {
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
-    <div className="rounded-md border">
+    <div className={className}>
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Date</TableHead>
-            {metrics.map((metric) => (
-              <TableHead key={metric} className="capitalize">
-                {metric.replace(/([A-Z])/g, " $1").trim()}
-              </TableHead>
-            ))}
-          </TableRow>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id} className="capitalize">
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
         </TableHeader>
         <TableBody>
-          {data.map((row, index) => (
-            <TableRow key={index}>
-              <TableCell>{format(row.date, "MMM d, yyyy")}</TableCell>
-              {metrics.map((metric) => (
-                <TableCell key={metric}>{formatter(row[metric])}</TableCell>
+          {table.getRowModel().rows.map((row) => (
+            <TableRow key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
               ))}
             </TableRow>
           ))}
