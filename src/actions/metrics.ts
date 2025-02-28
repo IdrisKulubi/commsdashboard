@@ -170,3 +170,39 @@ export async function addNewsletterMetric(data: NewsletterMetricFormData) {
     throw new Error(`Failed to save newsletter metrics: ${error}`);
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updateMetric(metric: any) {
+  try {
+    let result;
+    switch (metric.type) {
+      case "social":
+        result = await db
+          .update(socialMetrics)
+          .set(metric)
+          .where(eq(socialMetrics.id, metric.id))
+          .returning();
+        break;
+      case "website":
+        result = await db
+          .update(websiteMetrics)
+          .set(metric)
+          .where(eq(websiteMetrics.id, metric.id))
+          .returning();
+        break;
+      case "newsletter":
+        result = await db
+          .update(newsletterMetrics)
+          .set(metric)
+          .where(eq(newsletterMetrics.id, metric.id))
+          .returning();
+        break;
+      default:
+        throw new Error("Invalid metric type");
+    }
+    return result[0];
+  } catch (error) {
+    console.error("Error updating metric:", error);
+    throw error;
+  }
+}

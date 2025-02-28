@@ -4,6 +4,10 @@ import { AnalyticsSection } from "@/components/analytics-section";
 import { SocialMetric, WebsiteMetric, NewsletterMetric } from "@/db/schema";
 import {  AccessorColumnDef, ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { updateMetric } from "@/actions/metrics";
+import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics } from "@/lib/api";
 
 interface AnalyticsClientProps {
   initialData: {
@@ -14,6 +18,52 @@ interface AnalyticsClientProps {
 }
 
 export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
+  const [metrics, setMetrics] = useState(initialData);
+  const toast = useToast();
+
+  const handleEdit = async (updatedMetric: SocialMetric | WebsiteMetric | NewsletterMetric) => {
+    try {
+      // Optimistically update the UI
+      setMetrics(prev => {
+        return {
+          socialMetrics: 
+            'platform' in updatedMetric ? prev.socialMetrics.map(m =>
+              m.id === updatedMetric.id ? updatedMetric as SocialMetric : m
+            ) : prev.socialMetrics,
+          websiteMetrics:
+            'users' in updatedMetric ? prev.websiteMetrics.map(m =>
+              m.id === updatedMetric.id ? updatedMetric as WebsiteMetric : m
+            ) : prev.websiteMetrics,
+          newsletterMetrics:
+            'recipients' in updatedMetric ? prev.newsletterMetrics.map(m =>
+              m.id === updatedMetric.id ? updatedMetric as NewsletterMetric : m
+            ) : prev.newsletterMetrics,
+        };
+      });
+      
+      // Send API request
+      await updateMetric(updatedMetric);
+      
+      // Optional: Re-fetch to confirm
+      const fetchMetrics = async () => {
+        const socialMetrics = await getSocialMetrics("FACEBOOK", "ASM", new Date('2023-01-01'), new Date()); // Adjust params as needed
+        const websiteMetrics = await getWebsiteMetrics("ASM", new Date('2023-01-01'), new Date()); // Adjust params as needed
+        const newsletterMetrics = await getNewsletterMetrics("ASM", new Date('2023-01-01'), new Date()); // Adjust params as needed
+        return { socialMetrics, websiteMetrics, newsletterMetrics };
+      };
+      const freshData = await fetchMetrics();
+      setMetrics(freshData);
+    } catch (error) {
+      console.error("Error updating metric:", error);
+      // Rollback on error
+      setMetrics(prev => prev);
+      toast.toast({
+        description: "Failed to update metric",
+        variant: "destructive",
+      });
+    }
+  };
+
   const socialColumns: ColumnDef<SocialMetric>[] = [
     {
       accessorKey: "date",
@@ -104,20 +154,23 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
       <div className="grid grid-cols-1 gap-8">
         <AnalyticsSection
           title="Social Media Analytics"
-          data={initialData.socialMetrics}
+          data={metrics.socialMetrics}
           columns={socialColumns}
+          onEdit={handleEdit}
         />
 
         <AnalyticsSection
           title="Website Analytics"
-          data={initialData.websiteMetrics}
+          data={metrics.websiteMetrics}
           columns={websiteColumns}
+          onEdit={handleEdit}
         />
 
         <AnalyticsSection
           title="Newsletter Analytics"
-          data={initialData.newsletterMetrics}
+          data={metrics.newsletterMetrics}
           columns={newsletterColumns}
+          onEdit={handleEdit}
         />
       </div>
     </div>

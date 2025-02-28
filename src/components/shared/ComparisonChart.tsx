@@ -12,8 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { useTheme } from "next-themes";
 
-// Define metric types based on your database schema
-type MetricData = {
+// Export the MetricData type
+export type MetricData = {
   date: Date;
   [key: string]: number | Date | string | null;
 };
