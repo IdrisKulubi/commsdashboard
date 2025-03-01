@@ -20,6 +20,7 @@ import {
 } from "@/lib/schemas";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface NewsletterMetricFormProps {
   onSuccess: () => Promise<void>;
@@ -27,6 +28,7 @@ interface NewsletterMetricFormProps {
 
 export function NewsletterMetricForm({ onSuccess }: NewsletterMetricFormProps) {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<NewsletterMetricFormData>({
     resolver: zodResolver(newsletterMetricSchema),
     defaultValues: {
@@ -37,6 +39,7 @@ export function NewsletterMetricForm({ onSuccess }: NewsletterMetricFormProps) {
 
   async function onSubmit(data: NewsletterMetricFormData) {
     try {
+      setIsSubmitting(true);
       await addNewsletterMetric(data);
       await onSuccess();
       toast({
@@ -47,8 +50,9 @@ export function NewsletterMetricForm({ onSuccess }: NewsletterMetricFormProps) {
       toast({
         title: "Failed to add newsletter metrics",
       });
+    } finally {
+      setIsSubmitting(false);
     }
-
   }
 
   return (
@@ -100,8 +104,8 @@ export function NewsletterMetricForm({ onSuccess }: NewsletterMetricFormProps) {
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Add Newsletter Metrics
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Adding..." : "Add Newsletter Metrics"}
         </Button>
       </form>
     </Form>

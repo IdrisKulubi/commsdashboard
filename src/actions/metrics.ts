@@ -2,7 +2,7 @@
 
 import db from "@/db/drizzle";
 import { and, eq, sql } from "drizzle-orm";
-import { socialMetrics, websiteMetrics, newsletterMetrics } from "@/db/schema";
+import { socialMetrics, websiteMetrics, newsletterMetrics, NewsletterMetric, WebsiteMetric } from "@/db/schema";
 import {
   type SocialMetricFormData,
   type WebsiteMetricFormData,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 import { PLATFORMS, BUSINESS_UNITS } from "@/db/schema";
+import { SocialMetric } from "@/lib/types";
 
 async function checkExistingMetric(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,35 +172,78 @@ export async function addNewsletterMetric(data: NewsletterMetricFormData) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function updateMetric(metric: any) {
+export async function updateMetric(metric: SocialMetric | WebsiteMetric | NewsletterMetric) {
   try {
     let result;
-    switch (metric.type) {
-      case "social":
-        result = await db
-          .update(socialMetrics)
-          .set(metric)
-          .where(eq(socialMetrics.id, metric.id))
-          .returning();
-        break;
-      case "website":
-        result = await db
-          .update(websiteMetrics)
-          .set(metric)
-          .where(eq(websiteMetrics.id, metric.id))
-          .returning();
-        break;
-      case "newsletter":
-        result = await db
-          .update(newsletterMetrics)
-          .set(metric)
-          .where(eq(newsletterMetrics.id, metric.id))
-          .returning();
-        break;
-      default:
-        throw new Error("Invalid metric type");
+    
+    // Ensure date is a Date object
+    const processedMetric = {
+      ...metric,
+      date: metric.date instanceof Date ? metric.date : new Date(metric.date)
+    };
+    
+    // Determine metric type and update accordingly
+    if ('platform' in processedMetric) {
+      // Create update data object with only the date field initially
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: Record<string, any> = {
+        date: processedMetric.date,
+        updatedAt: sql`CURRENT_TIMESTAMP`
+      };
+      
+      // Only add properties if they exist in the processed metric
+      if ('impressions' in processedMetric && processedMetric.impressions !== undefined) {
+        updateData.impressions = processedMetric.impressions;
+      }
+      if ('followers' in processedMetric && processedMetric.followers !== undefined) {
+        updateData.followers = processedMetric.followers;
+      }
+      if ('numberOfPosts' in processedMetric && processedMetric.numberOfPosts !== undefined) {
+        updateData.numberOfPosts = processedMetric.numberOfPosts;
+      }
+      
+      result = await db
+        .update(socialMetrics)
+        .set(updateData)
+        .where(and(
+          eq(socialMetrics.id, Number(processedMetric.id)),
+          eq(socialMetrics.platform, processedMetric.platform as keyof typeof PLATFORMS),
+          eq(socialMetrics.businessUnit, processedMetric.businessUnit as keyof typeof BUSINESS_UNITS)
+        ))
+        .returning();
+    } else if ('users' in processedMetric) {
+      // Extract only the fields that should be updated
+      const { users, clicks, sessions, date } = processedMetric;
+      
+      result = await db
+        .update(websiteMetrics)
+        .set({
+          users,
+          clicks,
+          sessions,
+          date,
+          updatedAt: sql`CURRENT_TIMESTAMP`
+        })
+        .where(eq(websiteMetrics.id, processedMetric.id))
+        .returning();
+    } else {
+      // Extract only the fields that should be updated
+      const { recipients, openRate, numberOfEmails, date } = processedMetric;
+      
+      result = await db
+        .update(newsletterMetrics)
+        .set({
+          recipients,
+          openRate,
+          numberOfEmails,
+          date,
+          updatedAt: sql`CURRENT_TIMESTAMP`
+        })
+        .where(eq(newsletterMetrics.id, processedMetric.id))
+        .returning();
     }
+
+    revalidatePath('/');
     return result[0];
   } catch (error) {
     console.error("Error updating metric:", error);

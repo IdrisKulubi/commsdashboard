@@ -17,6 +17,7 @@ import { BUSINESS_UNITS } from "@/db/schema";
 import { websiteMetricSchema, type WebsiteMetricFormData } from "@/lib/schemas";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface WebsiteMetricFormProps {
   onSuccess: () => Promise<void>;
@@ -24,6 +25,7 @@ interface WebsiteMetricFormProps {
 
 export function WebsiteMetricForm({ onSuccess }: WebsiteMetricFormProps) {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<WebsiteMetricFormData>({
     resolver: zodResolver(websiteMetricSchema),
     defaultValues: {
@@ -34,6 +36,7 @@ export function WebsiteMetricForm({ onSuccess }: WebsiteMetricFormProps) {
 
   async function onSubmit(data: WebsiteMetricFormData) {
     try {
+      setIsSubmitting(true);
       console.log("Submitting website metric form data:", data);
       const result = await addWebsiteMetric(data);
 
@@ -63,6 +66,8 @@ export function WebsiteMetricForm({ onSuccess }: WebsiteMetricFormProps) {
           error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -112,8 +117,32 @@ export function WebsiteMetricForm({ onSuccess }: WebsiteMetricFormProps) {
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Add Website Metrics
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <span className="mr-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+              </span>
+              Adding...
+            </>
+          ) : (
+            "Add Website Metrics"
+          )}
         </Button>
       </form>
     </Form>
