@@ -20,6 +20,8 @@ import { updateMetric } from "@/actions/metrics";
 import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics } from "@/lib/api";
 import { MetricsCard } from "@/components/shared/MetricsCard";
 import { DateRange } from "react-day-picker";
+import { CountryFilter } from "@/components/shared/CountryFilter";
+import { COUNTRIES } from "@/lib/constants";
 
 type DashboardClientProps = {
   initialDateRange: DateRange;
@@ -40,6 +42,7 @@ export function DashboardClient({
   const [filters, setFilters] = useState({
     platform: PLATFORMS.FACEBOOK as keyof typeof PLATFORMS,
     businessUnit: BUSINESS_UNITS.ASM as keyof typeof BUSINESS_UNITS,
+    country: "GLOBAL" as keyof typeof COUNTRIES,
     dateRange: initialDateRange
   });
 
@@ -65,7 +68,7 @@ export function DashboardClient({
       try {
         // Use the API endpoint instead of the server action
         const response = await fetch(
-          `/api/metrics/social?businessUnit=${newFilters.businessUnit}&from=${newFilters.dateRange.from.toISOString()}&to=${newFilters.dateRange.to.toISOString()}&platform=${typedPlatform}`
+          `/api/metrics/social?businessUnit=${newFilters.businessUnit}&from=${newFilters.dateRange.from.toISOString()}&to=${newFilters.dateRange.to.toISOString()}&platform=${typedPlatform}&country=${newFilters.country}`
         );
         
         if (!response.ok) {
@@ -290,6 +293,26 @@ export function DashboardClient({
             onDateRangeChange={(range) => 
               setFilters(prev => ({ ...prev, dateRange: range || initialDateRange }))
             }
+          />
+          <CountryFilter
+            country={filters.country}
+            onCountryChange={(c: string) => {
+              const typedCountry = c as keyof typeof COUNTRIES;
+              
+              // Create a new filters object with the updated country
+              const newFilters = {
+                ...filters,
+                country: typedCountry
+              };
+              
+              // Update state with the new filters
+              setFilters(newFilters);
+              
+              // Fetch data with the new country filter
+              if (newFilters.dateRange.from && newFilters.dateRange.to) {
+                // Fetch data with country filter
+              }
+            }}
           />
         </div>
       </div>

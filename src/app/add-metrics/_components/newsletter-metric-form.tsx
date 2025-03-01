@@ -21,6 +21,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { COUNTRIES } from "@/lib/constants";
 
 interface NewsletterMetricFormProps {
   onSuccess: () => Promise<void>;
@@ -102,6 +103,23 @@ export function NewsletterMetricForm({ onSuccess }: NewsletterMetricFormProps) {
             placeholder="Number of Emails"
             {...form.register("numberOfEmails", { valueAsNumber: true })}
           />
+
+          <Select
+            name="country"
+            onValueChange={(value) => form.setValue("country", value)}
+            defaultValue={form.watch("country") || "GLOBAL"}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Country" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(COUNTRIES).map(([key, value]) => (
+                <SelectItem key={key} value={key}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>

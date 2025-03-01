@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
     const platform = searchParams.get('platform');
+    const country = searchParams.get('country');
 
     // Validate required parameters
     if (!businessUnit || !from || !to) {
@@ -31,6 +32,11 @@ export async function GET(request: NextRequest) {
     // Add platform filter if provided
     if (platform) {
       conditions.push(eq(socialMetrics.platform, platform as keyof typeof PLATFORMS));
+    }
+
+    // Add country filter if provided
+    if (country) {
+      conditions.push(eq(socialMetrics.country, country));
     }
 
     // Query the database

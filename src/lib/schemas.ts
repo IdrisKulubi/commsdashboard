@@ -8,18 +8,21 @@ const baseMetricSchema = z.object({
 
 export const socialMetricSchema = baseMetricSchema.extend({
   platform: z.enum(Object.values(PLATFORMS) as [string, ...string[]]),
+  country: z.string().default("GLOBAL"),
   impressions: z.number().int().nonnegative(),
   followers: z.number().int().nonnegative(),
   numberOfPosts: z.number().int().nonnegative().optional(),
 });
 
 export const websiteMetricSchema = baseMetricSchema.extend({
+  country: z.string().default("GLOBAL"),
   users: z.number().int().nonnegative(),
   clicks: z.number().int().nonnegative().optional(),
   sessions: z.number().int().nonnegative().optional(),
 });
 
 export const newsletterMetricSchema = baseMetricSchema.extend({
+  country: z.string().default("GLOBAL"),
   recipients: z.number().int().nonnegative(),
   openRate: z.number().min(0).max(1),
   numberOfEmails: z.number().int().nonnegative(),

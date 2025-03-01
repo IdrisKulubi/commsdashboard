@@ -42,6 +42,7 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
       });
       
       // Send API request
+      //@ts-expect-error - updatedMetric is a NewsletterMetric
       await updateMetric(updatedMetric);
       
       // Optional: Re-fetch to confirm

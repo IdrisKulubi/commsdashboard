@@ -11,13 +11,16 @@ import {
 import { revalidatePath } from "next/cache";
 import { PLATFORMS, BUSINESS_UNITS } from "@/db/schema";
 import { SocialMetric } from "@/lib/types";
+import { COUNTRIES } from "@/lib/constants";
+
 
 async function checkExistingMetric(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   table: any,
   date: Date,
   businessUnit: string,
-  platform?: string
+  platform?: string,
+  country?: string
 ) {
   const conditions = [
     eq(table.date, date),
@@ -26,6 +29,10 @@ async function checkExistingMetric(
 
   if (platform) {
     conditions.push(eq(table.platform, platform as keyof typeof PLATFORMS));
+  }
+
+  if (country) {
+    conditions.push(eq(table.country, country as keyof typeof COUNTRIES));
   }
 
   const existing = await db
@@ -56,6 +63,7 @@ export async function addSocialMetric(data: SocialMetricFormData) {
           impressions: data.impressions,
           followers: data.followers,
           numberOfPosts: data.numberOfPosts,
+          country: data.country,
           updatedAt: sql`CURRENT_TIMESTAMP`,
         })
         .where(eq(socialMetrics.id, existing.id));
@@ -68,6 +76,7 @@ export async function addSocialMetric(data: SocialMetricFormData) {
         impressions: data.impressions,
         followers: data.followers,
         numberOfPosts: data.numberOfPosts,
+        country: data.country as keyof typeof COUNTRIES,
       });
     }
     console.log("Social metric added successfully");

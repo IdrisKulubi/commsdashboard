@@ -8,6 +8,13 @@
       "when": 1738532610558,
       "tag": "0000_bumpy_gravity",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1740862406259,
+      "tag": "0001_hard_jamie_braddock",
+      "breakpoints": true
     }
   ]
 }

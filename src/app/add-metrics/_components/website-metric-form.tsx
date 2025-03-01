@@ -18,6 +18,7 @@ import { websiteMetricSchema, type WebsiteMetricFormData } from "@/lib/schemas";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { COUNTRIES } from "@/lib/constants";
 
 interface WebsiteMetricFormProps {
   onSuccess: () => Promise<void>;
@@ -115,6 +116,23 @@ export function WebsiteMetricForm({ onSuccess }: WebsiteMetricFormProps) {
             placeholder="Sessions"
             {...form.register("sessions", { valueAsNumber: true })}
           />
+
+          <Select
+            name="country"
+            onValueChange={(value) => form.setValue("country", value)}
+            defaultValue={form.watch("country") || "GLOBAL"}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Country" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(COUNTRIES).map(([key, value]) => (
+                <SelectItem key={key} value={key}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>

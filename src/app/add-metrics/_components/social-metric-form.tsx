@@ -18,6 +18,7 @@ import { socialMetricSchema, type SocialMetricFormData } from "@/lib/schemas";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { COUNTRIES } from "@/lib/constants";
 
 interface SocialMetricFormProps {
   onSuccess: () => Promise<void>;
@@ -32,6 +33,7 @@ export function SocialMetricForm({ onSuccess }: SocialMetricFormProps) {
       date: new Date(),
       platform: "FACEBOOK",
       businessUnit: "ASM",
+      country: "GLOBAL",
     },
   });
 
@@ -128,6 +130,24 @@ export function SocialMetricForm({ onSuccess }: SocialMetricFormProps) {
             placeholder="Number of Posts"
             {...form.register("numberOfPosts", { valueAsNumber: true })}
           />
+
+          <Select
+            name="country"
+            onValueChange={(value) => form.setValue("country", value)}
+            defaultValue={form.watch("country") || "GLOBAL"}
+          >
+
+            <SelectTrigger>
+              <SelectValue placeholder="Country" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(COUNTRIES).map(([key, value]) => (
+                <SelectItem key={key} value={key}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>

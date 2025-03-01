@@ -25,6 +25,7 @@ export const BUSINESS_UNITS = {
   EM: "EM",
 } as const;
 
+
 // Social Media Metrics Table
 export const socialMetrics = pgTable("social_metrics", {
   id: serial("id").primaryKey(),
@@ -42,6 +43,7 @@ export const socialMetrics = pgTable("social_metrics", {
     enum: ["ASM", "IACL", "EM"] as const,
   }).notNull(),
   date: timestamp("date").notNull(),
+  country: text("country").default("GLOBAL"), // Add country field with GLOBAL default
   impressions: integer("impressions"),
   followers: integer("followers"),
   numberOfPosts: integer("number_of_posts"),
@@ -56,11 +58,11 @@ export const websiteMetrics = pgTable("website_metrics", {
     enum: ["ASM", "IACL", "EM"] as const,
   }).notNull(),
   date: timestamp("date").notNull(),
+  country: text("country").default("GLOBAL"), // Add country field with GLOBAL default
   users: integer("users"),
   clicks: integer("clicks"),
   sessions: integer("sessions"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -71,10 +73,10 @@ export const newsletterMetrics = pgTable("newsletter_metrics", {
     enum: ["ASM", "IACL", "EM"] as const,
   }).notNull(),
   date: timestamp("date").notNull(),
+  country: text("country").default("GLOBAL"), // Add country field with GLOBAL default
   recipients: integer("recipients"),
   openRate: decimal("open_rate", { precision: 5, scale: 2 }), // Stores percentage as decimal
   numberOfEmails: integer("number_of_emails"),
-
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
