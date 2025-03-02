@@ -25,6 +25,7 @@ interface ComparisonChartProps {
   xAxisKey?: string;
   className?: string;
   dateFormat?: string;
+  isLoading?: boolean;
 }
 
 const colors = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#00C49F"];
@@ -36,6 +37,8 @@ export function ComparisonChart({
   xAxisKey = "date",
   className,
   dateFormat = "MMM yyyy",
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  isLoading = false,
 }: ComparisonChartProps) {
   const { theme } = useTheme();
   const textColor = theme === "dark" ? "#ffffff" : "#000000";

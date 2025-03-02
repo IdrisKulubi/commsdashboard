@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { MetricsFilter } from "@/components/shared/MetricsFilter";
 import { DateRangeSelector } from "@/components/shared/DateRangeSelector";
 import { PlusCircle, BarChart } from "lucide-react";
@@ -22,6 +22,7 @@ import { MetricsCard } from "@/components/shared/MetricsCard";
 import { DateRange } from "react-day-picker";
 import { CountryFilter } from "@/components/shared/CountryFilter";
 import { COUNTRIES } from "@/lib/constants";
+import { useToast } from "@/hooks/use-toast";
 
 type DashboardClientProps = {
   initialDateRange: DateRange;
@@ -47,28 +48,28 @@ export function DashboardClient({
   });
 
   const [metrics, setMetrics] = useState(initialData);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  // Modify the platform change handler to use the API endpoint
+  // Fix the platform filtering issue
   const handlePlatformChange = async (p: string) => {
     console.log("Changing platform to:", p);
-    // Ensure the platform is correctly typed
     const typedPlatform = p as keyof typeof PLATFORMS;
     
-    // Create a new filters object with the updated platform
-    const newFilters = {
-      ...filters,
+    // Update filters state first
+    setFilters(prev => ({
+      ...prev,
       platform: typedPlatform
-    };
+    }));
     
-    // Update state with the new filters
-    setFilters(newFilters);
-    
-    // Immediately fetch data with the new platform value
-    if (newFilters.dateRange.from && newFilters.dateRange.to) {
+    // Then fetch data for the new platform
+    if (filters.dateRange.from && filters.dateRange.to) {
       try {
-        // Use the API endpoint instead of the server action
+        // Show loading state
+        setIsLoading(true);
+        
         const response = await fetch(
-          `/api/metrics/social?businessUnit=${newFilters.businessUnit}&from=${newFilters.dateRange.from.toISOString()}&to=${newFilters.dateRange.to.toISOString()}&platform=${typedPlatform}&country=${newFilters.country}`
+          `/api/metrics/social?businessUnit=${filters.businessUnit}&from=${filters.dateRange.from.toISOString()}&to=${filters.dateRange.to.toISOString()}&platform=${typedPlatform}&country=${filters.country}`
         );
         
         if (!response.ok) {
@@ -78,73 +79,88 @@ export function DashboardClient({
         const socialMetrics = await response.json();
         console.log(`Fetched ${socialMetrics.length} metrics for ${typedPlatform}`);
         
-        // Update just the social metrics
-        setMetrics(prev => ({
-          ...prev,
-          socialMetrics
-        }));
+        // If no data was returned, create a placeholder record
+        if (socialMetrics.length === 0) {
+          // Create a placeholder record for the UI
+          const placeholderMetric = {
+            id: -1, // Use a negative ID to indicate it's a placeholder
+            platform: typedPlatform,
+            businessUnit: filters.businessUnit,
+            date: new Date(),
+            country: filters.country,
+            impressions: 0,
+            followers: 0,
+            numberOfPosts: 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          
+          // Update state with the placeholder
+          setMetrics(prev => ({
+            ...prev,
+            socialMetrics: [placeholderMetric]
+          }));
+          
+          // Show a toast notification
+          toast({
+            title: "No data available",
+            description: `No data found for ${typedPlatform}. Showing placeholder values.`,
+            variant: "default"
+          });
+        } else {
+          // Update with the real data
+          setMetrics(prev => ({
+            ...prev,
+            socialMetrics
+          }));
+        }
       } catch (error) {
         console.error(`Error fetching ${typedPlatform} metrics:`, error);
+        toast({
+          title: "Error fetching data",
+          description: String(error),
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
   
   // Similarly update the business unit change handler
   const handleBusinessUnitChange = async (bu: string) => {
-    const typedBU = bu as keyof typeof BUSINESS_UNITS;
-    
-    // Create a new filters object with the updated business unit
+    const typedBusinessUnit = bu as keyof typeof BUSINESS_UNITS;
     const newFilters = {
       ...filters,
-      businessUnit: typedBU
+      businessUnit: typedBusinessUnit
     };
     
-    // Update state with the new filters
     setFilters(newFilters);
     
-    // Immediately fetch data with the new business unit
     if (newFilters.dateRange.from && newFilters.dateRange.to) {
       try {
-        const [socialMetrics, websiteMetrics, newsletterMetrics] = await Promise.all([
-          getSocialMetrics(
-            newFilters.platform as "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK",
-            typedBU,
-            newFilters.dateRange.from,
-            newFilters.dateRange.to
-          ),
-          getWebsiteMetrics(
-            typedBU,
-            newFilters.dateRange.from,
-            newFilters.dateRange.to
-          ),
-          getNewsletterMetrics(
-            typedBU,
-            newFilters.dateRange.from,
-            newFilters.dateRange.to
-          )
-        ]);
+        const response = await fetch(
+          `/api/metrics/social?businessUnit=${typedBusinessUnit}&from=${newFilters.dateRange.from.toISOString()}&to=${newFilters.dateRange.to.toISOString()}&platform=${newFilters.platform}&country=${newFilters.country}`
+        );
         
-        setMetrics({
-          socialMetrics,
-          websiteMetrics,
-          newsletterMetrics
-        });
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
+        
+        const socialMetrics = await response.json();
+        setMetrics(prev => ({
+          ...prev,
+          socialMetrics
+        }));
       } catch (error) {
-        console.error(`Error fetching metrics for ${typedBU}:`, error);
+        console.error(`Error fetching metrics for ${typedBusinessUnit}:`, error);
       }
     }
   };
 
-  // Use a more robust filtering approach
-  const filteredSocialMetrics = useMemo(() => {
-    return metrics.socialMetrics.filter(m => {
-      // Case-insensitive platform comparison
-      const platformMatch = String(m.platform).toUpperCase() === String(filters.platform).toUpperCase();
-      const businessUnitMatch = m.businessUnit === filters.businessUnit;
-      
-      return platformMatch && businessUnitMatch;
-    });
-  }, [metrics.socialMetrics, filters.platform, filters.businessUnit]);
+  // Remove the useMemo filtering that's causing issues
+  // Instead, use the API-filtered data directly
+  const filteredSocialMetrics = metrics.socialMetrics;
 
   // Add useEffect to fetch fresh data when filters change
   useEffect(() => {
@@ -322,6 +338,7 @@ export function DashboardClient({
           title={`${filters.platform} Metrics`}
           data={filteredSocialMetrics}
           metrics={["impressions", "followers", "numberOfPosts"]}
+          isLoading={isLoading}
         />
         <ComparisonChart
           title="Website Metrics"
