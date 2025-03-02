@@ -225,6 +225,9 @@ export function DashboardClient({
 
   const handleEdit = async (updatedMetric: SocialMetric | WebsiteMetric | NewsletterMetric) => {
     try {
+      // Check if this is a placeholder record (ID is negative)
+      const isPlaceholder = updatedMetric.id < 0;
+      
       // Use type guards to determine the correct type
       let typedMetric: SocialMetric | WebsiteMetric | NewsletterMetric;
       
@@ -236,36 +239,145 @@ export function DashboardClient({
         typedMetric = updatedMetric as NewsletterMetric;
       }
       
-      // First update the server with properly typed metric
-      //@ts-expect-error ignore type error for now  
-      const result = await updateMetric(typedMetric);
-      
-      // Then update local state with the server response
-      setMetrics(prev => {
-        // Create a new object to avoid mutating the previous state
-        const newState = { ...prev };
+      // For placeholder records, create a new record instead of updating
+      if (isPlaceholder) {
+        // Create a new record without the ID field
+        const { id, createdAt: _, updatedAt: _2, ...metricData } = typedMetric;
         
-        // Update the appropriate metrics array based on the type of metric
-        if ('platform' in result) {
-          newState.socialMetrics = prev.socialMetrics.map(m => 
-            m.id === result.id ? result as SocialMetric : m
-          );
-        } else if ('users' in result) {
-          newState.websiteMetrics = prev.websiteMetrics.map(m => 
-            m.id === result.id ? result as WebsiteMetric : m
-          );
-        } else if ('recipients' in result) {
-          newState.newsletterMetrics = prev.newsletterMetrics.map(m => 
-            m.id === result.id ? result as NewsletterMetric : m
-          );
+        // Call the appropriate add function based on the metric type
+        let result;
+        
+        if ('platform' in typedMetric) {
+          // For social metrics
+          const response = await fetch('/api/metrics/social', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(metricData),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to create metric: ${response.statusText}`);
+          }
+          
+          result = await response.json();
+        } else if ('users' in typedMetric) {
+          // For website metrics
+          const response = await fetch('/api/metrics/website', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(metricData),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to create metric: ${response.statusText}`);
+          }
+          
+          result = await response.json();
+        } else if ('recipients' in typedMetric) {
+          // For newsletter metrics
+          const response = await fetch('/api/metrics/newsletter', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(metricData),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to create metric: ${response.statusText}`);
+          }
+          
+          result = await response.json();
         }
         
-        return newState;
-      });
-
+        // Update the state with the newly created record
+        if (result) {
+          setMetrics(prev => {
+            const newState = { ...prev };
+            
+            if ('platform' in typedMetric) {
+              newState.socialMetrics = [result];
+            } else if ('users' in typedMetric) {
+              newState.websiteMetrics = [result];
+            } else if ('recipients' in typedMetric) {
+              newState.newsletterMetrics = [result];
+            }
+            
+            return newState;
+          });
+          
+          toast({
+            title: "Metric created",
+            description: "The metric has been successfully created",
+            variant: "default"
+          });
+        }
+      } else {
+        // For existing records, update as before
+        const result = await updateMetric(typedMetric);
+        
+        // Check if result is defined and not an error
+        if (!result) {
+          toast({
+            title: "Error updating metric",
+            description: "The server returned an undefined result",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Check if the result is an error object
+        if ('error' in result && result.error) {
+          toast({
+            title: "Error updating metric",
+            description: result.message || "Unknown error",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Then update local state with the server response
+        setMetrics(prev => {
+          // Create a new object to avoid mutating the previous state
+          const newState = { ...prev };
+          
+          // Update the appropriate metrics array based on the type of metric
+          if ('platform' in result) {
+            newState.socialMetrics = prev.socialMetrics.map(m => 
+              m.id === result.id ? result as SocialMetric : m
+            );
+          } else if ('users' in result) {
+            newState.websiteMetrics = prev.websiteMetrics.map(m => 
+              m.id === result.id ? result as WebsiteMetric : m
+            );
+          } else if ('recipients' in result) {
+            newState.newsletterMetrics = prev.newsletterMetrics.map(m => 
+              m.id === result.id ? result as NewsletterMetric : m
+            );
+          }
+          
+          return newState;
+        });
+        
+        toast({
+          title: "Metric updated",
+          description: "The metric has been successfully updated",
+          variant: "default"
+        });
+      }
+      
       setEditingMetric(null);
     } catch (error) {
       console.error("Error updating metric:", error);
+      toast({
+        title: "Error updating metric",
+        description: String(error),
+        variant: "destructive"
+      });
     }
   };
 

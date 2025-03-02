@@ -183,46 +183,58 @@ export async function addNewsletterMetric(data: NewsletterMetricFormData) {
 
 export async function updateMetric(metric: SocialMetric | WebsiteMetric | NewsletterMetric) {
   try {
-    let result;
+    console.log("Updating metric:", metric);
     
-    // Ensure date is a Date object
+    // Validate that the metric has an ID
+    if (!metric || !metric.id) {
+      console.error("Invalid metric data: Missing ID");
+      throw new Error("Invalid metric data: Missing ID");
+    }
+    
+    // Process the metric to ensure dates are properly formatted
     const processedMetric = {
       ...metric,
-      date: metric.date instanceof Date ? metric.date : new Date(metric.date)
+      // Convert date strings to Date objects if needed
+      date: metric.date instanceof Date ? metric.date : new Date(metric.date),
     };
     
-    // Determine metric type and update accordingly
+    let result;
+    
+    // Determine which type of metric we're updating
     if ('platform' in processedMetric) {
-      // Create update data object with only the date field initially
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updateData: Record<string, any> = {
-        date: processedMetric.date,
-        updatedAt: sql`CURRENT_TIMESTAMP`
-      };
+      // Extract only the fields that should be updated
+      //@ts-expect-error - This is a workaround to avoid TypeScript errors
+      const { impressions, followers, numberOfPosts, date, platform, businessUnit, country } = processedMetric;
       
-      // Only add properties if they exist in the processed metric
-      if ('impressions' in processedMetric && processedMetric.impressions !== undefined) {
-        updateData.impressions = processedMetric.impressions;
-      }
-      if ('followers' in processedMetric && processedMetric.followers !== undefined) {
-        updateData.followers = processedMetric.followers;
-      }
-      if ('numberOfPosts' in processedMetric && processedMetric.numberOfPosts !== undefined) {
-        updateData.numberOfPosts = processedMetric.numberOfPosts;
+      // Validate required fields
+      if (impressions === undefined || followers === undefined) {
+        console.error("Invalid social metric data: Missing required fields");
+        throw new Error("Invalid social metric data: Missing required fields");
       }
       
       result = await db
         .update(socialMetrics)
-        .set(updateData)
-        .where(and(
-          eq(socialMetrics.id, Number(processedMetric.id)),
-          eq(socialMetrics.platform, processedMetric.platform as keyof typeof PLATFORMS),
-          eq(socialMetrics.businessUnit, processedMetric.businessUnit as keyof typeof BUSINESS_UNITS)
-        ))
+        .set({
+          impressions,
+          followers,
+          numberOfPosts,
+          date,
+          platform: platform as keyof typeof PLATFORMS,
+          businessUnit: businessUnit as keyof typeof BUSINESS_UNITS,
+          country: country as keyof typeof COUNTRIES,
+          updatedAt: sql`CURRENT_TIMESTAMP`
+        })
+        .where(eq(socialMetrics.id, Number(processedMetric.id)))
         .returning();
     } else if ('users' in processedMetric) {
       // Extract only the fields that should be updated
-      const { users, clicks, sessions, date } = processedMetric;
+      const { users, clicks, sessions, date, businessUnit, country } = processedMetric;
+      
+      // Validate required fields
+      if (users === undefined) {
+        console.error("Invalid website metric data: Missing required fields");
+        throw new Error("Invalid website metric data: Missing required fields");
+      }
       
       result = await db
         .update(websiteMetrics)
@@ -231,13 +243,21 @@ export async function updateMetric(metric: SocialMetric | WebsiteMetric | Newsle
           clicks,
           sessions,
           date,
+          businessUnit,
+          country,
           updatedAt: sql`CURRENT_TIMESTAMP`
         })
         .where(eq(websiteMetrics.id, processedMetric.id))
         .returning();
-    } else {
+    } else if ('recipients' in processedMetric) {
       // Extract only the fields that should be updated
-      const { recipients, openRate, numberOfEmails, date } = processedMetric;
+      const { recipients, openRate, numberOfEmails, date, businessUnit, country } = processedMetric;
+      
+      // Validate required fields
+      if (recipients === undefined || openRate === undefined) {
+        console.error("Invalid newsletter metric data: Missing required fields");
+        throw new Error("Invalid newsletter metric data: Missing required fields");
+      }
       
       result = await db
         .update(newsletterMetrics)
@@ -246,16 +266,32 @@ export async function updateMetric(metric: SocialMetric | WebsiteMetric | Newsle
           openRate,
           numberOfEmails,
           date,
+          businessUnit,
+          country,
           updatedAt: sql`CURRENT_TIMESTAMP`
         })
         .where(eq(newsletterMetrics.id, processedMetric.id))
         .returning();
+    } else {
+      console.error("Unknown metric type:", processedMetric);
+      throw new Error("Unknown metric type");
     }
-
+    
+    // Check if we got a result back
+    if (!result || result.length === 0) {
+      console.error("No rows updated");
+      throw new Error("No rows updated");
+    }
+    
+    console.log("Update successful, returning:", result[0]);
     revalidatePath('/');
     return result[0];
   } catch (error) {
     console.error("Error updating metric:", error);
-    throw error;
+    // Instead of throwing, return an error object that the client can handle
+    return {
+      error: true,
+      message: error instanceof Error ? error.message : String(error)
+    };
   }
 }
