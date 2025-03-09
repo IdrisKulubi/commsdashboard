@@ -1,72 +1,36 @@
-import { Suspense } from "react";
-import { startOfMonth, endOfMonth, addMonths } from "date-fns";
-import { DashboardClient } from "@/components/DashboardClient";
-import {
-  getNewsletterMetrics,
-  getSocialMetrics,
-  getWebsiteMetrics,
-} from "@/lib/api";
+import { Metadata } from "next";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { MetricsOverview } from "@/components/dashboard/metrics-overview";
+import { EngagementTrends } from "@/components/dashboard/engagement-trends";
+import { PlatformBreakdown } from "@/components/dashboard/platform-breakdown";
+import { CountryDistribution } from "@/components/dashboard/country-distribution";
+import { getTotalMetrics } from "@/lib/api";
 
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
 
-// This is a Server Component
 export default async function DashboardPage() {
-  const initialDateRange = {
-    from: startOfMonth(addMonths(new Date(), -6)),
-    to: endOfMonth(new Date()),
-  };
-
-  // Fetch initial data
-  const initialData = {
-    socialMetrics: await getSocialMetrics(
-      "FACEBOOK",
-      "ASM",
-      initialDateRange.from,
-      initialDateRange.to
-    ),
-    websiteMetrics: await getWebsiteMetrics(
-      "ASM",
-      initialDateRange.from,
-      initialDateRange.to
-    ),
-    newsletterMetrics: await getNewsletterMetrics(
-      "ASM",
-      initialDateRange.from,
-      initialDateRange.to
-    ),
-  };
-
-  // Define columns configuration
-  const socialColumns = [
-    { header: 'Date', accessor: 'date' },
-    { header: 'Followers', accessor: 'followers' },
-    { header: 'Likes', accessor: 'likes' },
-    { header: 'Shares', accessor: 'shares' },
-    { header: 'Comments', accessor: 'comments' }
-  ];
-
-  const websiteColumns = [
-    { header: 'Date', accessor: 'date' },
-    { header: 'Page Views', accessor: 'pageViews' },
-    { header: 'Unique Visitors', accessor: 'uniqueVisitors' },
-    { header: 'Bounce Rate', accessor: 'bounceRate' }
-  ];
-
-  const newsletterColumns = [
-    { header: 'Date', accessor: 'date' },
-    { header: 'Subscribers', accessor: 'subscribers' },
-    { header: 'Open Rate', accessor: 'openRate' },
-    { header: 'Click Through', accessor: 'clickThrough' }
-  ];
-
+  const totalMetrics = await getTotalMetrics();
+  
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <DashboardClient
-        initialDateRange={initialDateRange}
-        initialData={initialData}
-        socialColumns={socialColumns}
-        websiteColumns={websiteColumns}
-        newsletterColumns={newsletterColumns}
-      />
-    </Suspense>
+    <div className="flex flex-col gap-4 md:gap-8 p-4 md:p-8">
+      <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        <MetricsOverview 
+          totalFollowers={totalMetrics.totalFollowers}
+          totalWebsiteUsers={totalMetrics.totalWebsiteUsers}
+          totalNewsletterRecipients={totalMetrics.totalNewsletterRecipients}
+          totalPosts={totalMetrics.totalPosts}
+        />
+      </div>
+      <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <RecentActivity className="lg:col-span-1" />
+        <PlatformBreakdown className="lg:col-span-1" />
+        <EngagementTrends className="lg:col-span-1" />
+      </div>
+      <div className="grid gap-4 md:gap-8 grid-cols-1">
+        <CountryDistribution />
+      </div>
+    </div>
   );
 }
