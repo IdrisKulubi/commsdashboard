@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db/drizzle";
+import  db from "@/db/drizzle";
 import { socialMetrics } from "@/db/schema";
-import { and, between, eq, sql } from "drizzle-orm";
+import { and, between, eq } from "drizzle-orm";
 
 export async function GET(request: Request) {
   try {
@@ -20,8 +20,8 @@ export async function GET(request: Request) {
     }
 
     const conditions = [
-      eq(socialMetrics.platform, platform),
-      eq(socialMetrics.businessUnit, businessUnit),
+      eq(socialMetrics.platform, platform as "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK"),
+      eq(socialMetrics.businessUnit, businessUnit as "ASM" | "IACL" | "EM"),
       between(socialMetrics.date, new Date(startDate), new Date(endDate))
     ];
 

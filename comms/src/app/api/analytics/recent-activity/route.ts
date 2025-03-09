@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db/drizzle";
+import  db  from "@/db/drizzle";
 import { socialMetrics, socialEngagementMetrics } from "@/db/schema";
 import { desc, sql } from "drizzle-orm";
 import { formatDistanceToNow } from "date-fns";
@@ -39,7 +39,7 @@ export async function GET() {
       const prevMetric = previousDayMetrics[index];
       
       // Determine if followers increased or decreased
-      const change = !prevMetric || metric.followers >= (prevMetric.followers || 0) 
+      const change = !prevMetric || metric.followers !== null && metric.followers >= (prevMetric?.followers || 0) 
         ? "increase" 
         : "decrease";
       

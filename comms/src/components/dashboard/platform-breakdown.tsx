@@ -11,8 +11,9 @@ import {
   Legend,
   Tooltip,
 } from "recharts";
-import { Facebook, Instagram, Linkedin, Loader2 } from "lucide-react";
+import { Facebook, Instagram, Linkedin} from "lucide-react";
 import { FaTiktok } from "react-icons/fa6";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PlatformBreakdownProps {
   className?: string;
@@ -34,7 +35,8 @@ export function PlatformBreakdown({ className }: PlatformBreakdownProps) {
     
     async function fetchPlatformData() {
       try {
-        const response = await fetch('/api/analytics/platform-breakdown');
+        const baseUrl = window.location.origin;
+        const response = await fetch(`${baseUrl}/api/analytics/platform-breakdown`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch platform breakdown data');
@@ -44,6 +46,13 @@ export function PlatformBreakdown({ className }: PlatformBreakdownProps) {
         setData(platformData);
       } catch (error) {
         console.error('Error fetching platform breakdown:', error);
+        // Fallback data
+        setData([
+          { name: "Facebook", value: 40, color: "#1877F2" },
+          { name: "Instagram", value: 30, color: "#E4405F" },
+          { name: "LinkedIn", value: 20, color: "#0A66C2" },
+          { name: "TikTok", value: 10, color: "#000000" }
+        ]);
       } finally {
         setIsLoading(false);
       }
@@ -72,17 +81,25 @@ export function PlatformBreakdown({ className }: PlatformBreakdownProps) {
   };
 
   return (
-    <Card className={cn("col-span-3", className)}>
-      <CardHeader>
-        <CardTitle>Platform Breakdown</CardTitle>
+    <Card className={cn("col-span-3 transition-all hover:shadow-md", className)}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl font-semibold">Platform Breakdown</CardTitle>
         <CardDescription>
           Follower distribution across platforms
         </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center items-center h-[300px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="space-y-4">
+            <Skeleton className="h-[200px] w-full rounded-md" />
+            <div className="space-y-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <>

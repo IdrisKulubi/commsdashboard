@@ -29,15 +29,16 @@ export async function POST(request: NextRequest) {
     
     // Insert the data into the database
     const result = await db.insert(socialEngagementMetrics).values({
-      platform: validatedData.platform,
-      businessUnit: validatedData.businessUnit,
+      platform: validatedData.platform as "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK",
+      businessUnit: validatedData.businessUnit as "ASM" | "IACL" | "EM",
       date: validatedData.date,
       likes: validatedData.likes,
       comments: validatedData.comments,
       shares: validatedData.shares,
       saves: validatedData.saves,
       clicks: validatedData.clicks,
-      engagementRate: validatedData.engagementRate,
+      engagementRate: validatedData.engagementRate !== undefined ? 
+        String(validatedData.engagementRate) : null,
       createdAt: new Date(),
       updatedAt: new Date(),
     }).returning();

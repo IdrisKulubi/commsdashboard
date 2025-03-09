@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db/drizzle";
+import  db  from "@/db/drizzle";
 import { newsletterMetrics } from "@/db/schema";
 import { and, between, eq } from "drizzle-orm";
 
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     }
 
     const conditions = [
-      eq(newsletterMetrics.businessUnit, businessUnit),
+      eq(newsletterMetrics.businessUnit, businessUnit as "ASM" | "IACL" | "EM"),
       between(newsletterMetrics.date, new Date(startDate), new Date(endDate))
     ];
 

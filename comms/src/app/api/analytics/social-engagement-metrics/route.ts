@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db/drizzle";
+import  db  from "@/db/drizzle";
 import { socialEngagementMetrics } from "@/db/schema";
 import { and, between, eq } from "drizzle-orm";
 
@@ -10,7 +10,6 @@ export async function GET(request: Request) {
     const businessUnit = searchParams.get("businessUnit");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
-    const country = searchParams.get("country") || "GLOBAL";
 
     if (!platform || !businessUnit || !startDate || !endDate) {
       return NextResponse.json(
@@ -20,8 +19,8 @@ export async function GET(request: Request) {
     }
 
     const conditions = [
-      eq(socialEngagementMetrics.platform, platform),
-      eq(socialEngagementMetrics.businessUnit, businessUnit),
+      eq(socialEngagementMetrics.platform, platform as "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK"),
+      eq(socialEngagementMetrics.businessUnit, businessUnit as "ASM" | "IACL" | "EM"),
       between(socialEngagementMetrics.date, new Date(startDate), new Date(endDate))
     ];
 

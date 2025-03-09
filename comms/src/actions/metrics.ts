@@ -2,7 +2,7 @@
 
 import db from "@/db/drizzle";
 import { and, eq, sql } from "drizzle-orm";
-import { socialMetrics, websiteMetrics, newsletterMetrics, NewsletterMetric, WebsiteMetric } from "@/db/schema";
+import { socialMetrics, websiteMetrics, newsletterMetrics, NewsletterMetric, WebsiteMetric, socialEngagementMetrics, SocialMetric, SocialEngagementMetric } from "@/db/schema";
 import {
   type SocialMetricFormData,
   type WebsiteMetricFormData,
@@ -10,8 +10,9 @@ import {
 } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 import { PLATFORMS, BUSINESS_UNITS } from "@/db/schema";
-import { SocialMetric } from "@/lib/types";
+import { SocialMetric as SocialMetricType } from "@/lib/types";
 import { COUNTRIES } from "@/lib/constants";
+import { and as drizzleAnd, between } from "drizzle-orm";
 
 
 async function checkExistingMetric(
@@ -181,7 +182,7 @@ export async function addNewsletterMetric(data: NewsletterMetricFormData) {
   }
 }
 
-export async function updateMetric(metric: SocialMetric | WebsiteMetric | NewsletterMetric) {
+export async function updateMetric(metric: SocialMetricType | WebsiteMetric | NewsletterMetric) {
   try {
     console.log("Updating metric:", metric);
     
@@ -293,5 +294,36 @@ export async function updateMetric(metric: SocialMetric | WebsiteMetric | Newsle
       error: true,
       message: error instanceof Error ? error.message : String(error)
     };
+  }
+}
+
+export async function getSocialMetrics(
+  platform: string,
+  businessUnit: string,
+  startDate: Date,
+  endDate: Date,
+  country: string = "GLOBAL"
+): Promise<SocialMetricType[]> {
+  try {
+    const conditions = [
+      eq(socialMetrics.platform, platform as any),
+      eq(socialMetrics.businessUnit, businessUnit as any),
+      between(socialMetrics.date, startDate, endDate)
+    ];
+
+    // Add country filter if not GLOBAL
+    if (country !== "GLOBAL") {
+      conditions.push(eq(socialMetrics.country, country));
+    }
+
+    const metrics = await db.query.socialMetrics.findMany({
+      where: and(...conditions),
+      orderBy: [socialMetrics.date],
+    });
+
+    return metrics;
+  } catch (error) {
+    console.error("Error fetching social metrics:", error);
+    throw error;
   }
 }
