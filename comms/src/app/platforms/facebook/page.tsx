@@ -17,8 +17,7 @@ export default async function FacebookPage() {
   const startDate = new Date();
   startDate.setMonth(startDate.getMonth() - 6);
   
-  // Default business unit
-  const defaultBusinessUnit = "ASM";
+  
   
   // Fetch initial data for all business units
   const businessUnits = Object.values(BUSINESS_UNITS) as ("ASM" | "IACL" | "EM")[];

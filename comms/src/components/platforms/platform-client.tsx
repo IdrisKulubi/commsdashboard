@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { SocialMetric, SocialEngagementMetric } from "@/db/schema";
+import { SocialMetric, SocialEngagementMetric, PLATFORMS } from "@/db/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -16,8 +16,6 @@ import { Loader2 } from "lucide-react";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -28,6 +26,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { BUSINESS_UNITS } from "@/lib/constants";
 
 interface PlatformClientProps {
   platform: string;
@@ -75,15 +74,15 @@ export function PlatformClient({
     try {
       const [socialData, engagementData] = await Promise.all([
         getSocialMetrics(
-          platform as any,
-          businessUnit as any,
+          platform as keyof typeof PLATFORMS,
+          businessUnit as keyof typeof BUSINESS_UNITS,
           dateRange.from,
           dateRange.to,
           country
         ),
         getSocialEngagementMetrics(
-          platform as any,
-          businessUnit as any,
+          platform as keyof typeof PLATFORMS,
+          businessUnit as keyof typeof BUSINESS_UNITS,
           dateRange.from,
           dateRange.to
         ),

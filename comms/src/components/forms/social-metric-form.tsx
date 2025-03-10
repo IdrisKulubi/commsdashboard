@@ -231,7 +231,7 @@ export function SocialMetricForm({
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  Select "Global" for worldwide metrics
+                  Select &quot;Gloabal&quot; for worldwide metrics
                 </FormDescription>
                 <FormMessage />
               </FormItem>

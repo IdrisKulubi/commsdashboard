@@ -15,6 +15,7 @@ import {
 } from "recharts";
 
 interface GrowthChartProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any[];
   title: string;
   description: string;
@@ -87,8 +88,9 @@ export function GrowthChart({
               <ReferenceLine y={0} stroke="#000" />
               <Bar 
                 dataKey="growth" 
-                name="Growth Rate" 
-                fill={(data) => (data.growth >= 0 ? "#82ca9d" : "#ff7675")}
+                name="Growth Rate"
+                fill="#82ca9d"
+                stroke="#82ca9d"
               />
             </BarChart>
           </ResponsiveContainer>

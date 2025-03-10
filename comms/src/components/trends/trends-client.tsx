@@ -1,18 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SocialMetric, WebsiteMetric, NewsletterMetric } from "@/db/schema";
-import { format, parseISO, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,8 +16,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { ComparisonChart } from "./comparison-chart";
-import { GrowthChart } from "./growth-chart";
+import { ComparisonChart } from "@/components/trends/comparison-chart";
+import { GrowthChart } from "@/components/trends/growth-chart";
 
 interface TrendsClientProps {
   socialMetrics: SocialMetric[];

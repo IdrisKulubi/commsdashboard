@@ -3,6 +3,7 @@ import { z } from "zod";
 import db from "@/db/drizzle";
 import { newsletterMetrics } from "@/db/schema";
 import { revalidatePath } from "next/cache";
+import { BUSINESS_UNITS } from "@/lib/constants";
 
 // Define the request schema
 const newsletterMetricSchema = z.object({
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     
     // Insert the data into the database
     const result = await db.insert(newsletterMetrics).values({
-      businessUnit: validatedData.businessUnit,
+      businessUnit: validatedData.businessUnit as keyof typeof BUSINESS_UNITS,
       date: validatedData.date,
       country: validatedData.country,
       recipients: validatedData.recipients,
@@ -34,7 +35,8 @@ export async function POST(request: NextRequest) {
       numberOfEmails: validatedData.numberOfEmails,
       createdAt: new Date(),
       updatedAt: new Date(),
-    }).returning();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any).returning();
     
     // Revalidate the analytics page
     revalidatePath("/analytics");

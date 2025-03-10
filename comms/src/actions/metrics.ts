@@ -2,7 +2,7 @@
 
 import db from "@/db/drizzle";
 import { and, eq, sql } from "drizzle-orm";
-import { socialMetrics, websiteMetrics, newsletterMetrics, NewsletterMetric, WebsiteMetric, socialEngagementMetrics, SocialMetric, SocialEngagementMetric } from "@/db/schema";
+import { socialMetrics, websiteMetrics, newsletterMetrics, NewsletterMetric, WebsiteMetric} from "@/db/schema";
 import {
   type SocialMetricFormData,
   type WebsiteMetricFormData,
@@ -10,10 +10,11 @@ import {
 } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 import { PLATFORMS, BUSINESS_UNITS } from "@/db/schema";
-import { SocialMetric as SocialMetricType } from "@/lib/types";
 import { COUNTRIES } from "@/lib/constants";
-import { and as drizzleAnd, between } from "drizzle-orm";
+import {  between } from "drizzle-orm";
+import { InferSelectModel } from "drizzle-orm";
 
+type SocialMetricType = InferSelectModel<typeof socialMetrics>;
 
 async function checkExistingMetric(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -204,7 +205,6 @@ export async function updateMetric(metric: SocialMetricType | WebsiteMetric | Ne
     // Determine which type of metric we're updating
     if ('platform' in processedMetric) {
       // Extract only the fields that should be updated
-      //@ts-expect-error - This is a workaround to avoid TypeScript errors
       const { impressions, followers, numberOfPosts, date, platform, businessUnit, country } = processedMetric;
       
       // Validate required fields
@@ -306,8 +306,8 @@ export async function getSocialMetrics(
 ): Promise<SocialMetricType[]> {
   try {
     const conditions = [
-      eq(socialMetrics.platform, platform as any),
-      eq(socialMetrics.businessUnit, businessUnit as any),
+      eq(socialMetrics.platform, platform as keyof typeof PLATFORMS),
+      eq(socialMetrics.businessUnit, businessUnit as keyof typeof BUSINESS_UNITS),
       between(socialMetrics.date, startDate, endDate)
     ];
 
@@ -322,6 +322,7 @@ export async function getSocialMetrics(
     });
 
     return metrics;
+
   } catch (error) {
     console.error("Error fetching social metrics:", error);
     throw error;

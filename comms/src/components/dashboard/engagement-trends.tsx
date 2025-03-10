@@ -14,7 +14,6 @@ import {
   Legend,
 } from "recharts";
 import { format, subDays } from "date-fns";
-import { Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface EngagementTrendsProps {

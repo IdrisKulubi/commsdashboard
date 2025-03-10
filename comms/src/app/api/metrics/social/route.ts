@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
       numberOfPosts: validatedData.numberOfPosts,
       createdAt: new Date(),
       updatedAt: new Date(),
-    }).returning();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any).returning();
     
     // Revalidate the analytics page
     revalidatePath("/analytics");

@@ -1,4 +1,4 @@
-import { and, eq, between, sql, count, sum } from "drizzle-orm";
+import { and, eq, between, sql } from "drizzle-orm";
 import { socialMetrics, websiteMetrics, newsletterMetrics, socialEngagementMetrics } from "@/db/schema";
 import type {
   SocialMetric,
@@ -99,7 +99,6 @@ export async function getTotalMetrics() {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
   
-  const today = new Date();
   
   // Get total followers across all platforms
   const totalFollowersResult = await db

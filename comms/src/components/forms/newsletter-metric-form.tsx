@@ -196,7 +196,7 @@ export function NewsletterMetricForm({
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  Select "Global" for worldwide metrics
+                  Select &quot;Global&quot; for worldwide metrics
                 </FormDescription>
                 <FormMessage />
               </FormItem>

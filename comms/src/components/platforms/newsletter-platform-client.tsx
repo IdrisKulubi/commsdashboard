@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { NewsletterMetric } from "@/db/schema";
+import { BUSINESS_UNITS, NewsletterMetric } from "@/db/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -67,7 +67,7 @@ export function NewsletterPlatformClient({
     
     try {
       const newsletterData = await getNewsletterMetrics(
-        businessUnit as any,
+        businessUnit as keyof typeof BUSINESS_UNITS,
         dateRange.from,
         dateRange.to,
         country

@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       sessions: validatedData.sessions,
       createdAt: new Date(),
       updatedAt: new Date(),
-    }).returning();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any).returning();
     
     // Revalidate the analytics page
     revalidatePath("/analytics");

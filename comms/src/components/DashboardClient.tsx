@@ -319,7 +319,6 @@ export function DashboardClient({
         }
       } else {
         // For existing records, update as before
-        //@ts-expect-error - This is a workaround to avoid TypeScript errors
         const result = await updateMetric(typedMetric);
         
         // Check if result is defined and not an error

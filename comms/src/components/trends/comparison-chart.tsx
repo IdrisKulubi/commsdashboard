@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialMetric } from "@/db/schema";
-import { format, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import {
   BarChart,
   Bar,
@@ -23,6 +22,7 @@ interface ComparisonChartProps {
 
 export function ComparisonChart({
   platforms,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   businessUnits,
   socialMetrics,
 }: ComparisonChartProps) {

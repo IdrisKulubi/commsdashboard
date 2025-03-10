@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { WebsiteMetric } from "@/db/schema";
+import { BUSINESS_UNITS, WebsiteMetric } from "@/db/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -23,9 +23,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 
 interface WebsitePlatformClientProps {
@@ -68,7 +65,7 @@ export function WebsitePlatformClient({
     
     try {
       const websiteData = await getWebsiteMetrics(
-        businessUnit as any,
+        businessUnit as keyof typeof BUSINESS_UNITS,
         dateRange.from,
         dateRange.to,
         country
@@ -127,6 +124,7 @@ export function WebsitePlatformClient({
   const totalClicks = data.websiteMetrics.reduce((sum, metric) => sum + (metric.clicks || 0), 0);
   const totalSessions = data.websiteMetrics.reduce((sum, metric) => sum + (metric.sessions || 0), 0);
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const metricsDistribution = [
     { name: "Users", value: totalUsers, color: "#8884d8" },
     { name: "Clicks", value: totalClicks, color: "#82ca9d" },
