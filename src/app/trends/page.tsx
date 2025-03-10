@@ -2,11 +2,12 @@ import { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { TrendsClient } from "@/components/trends/trends-client";
-import { getSocialMetrics } from "@/lib/api";
-import { PLATFORMS, BUSINESS_UNITS } from "@/db/schema";
+import { PLATFORMS, BUSINESS_UNITS, SocialMetric } from "@/db/schema";
 import { COUNTRIES } from "@/lib/constants";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+// Import server action
+import { getSocialMetrics } from "@/lib/actions/metrics";
 
 export const metadata: Metadata = {
   title: "Trends",
@@ -18,6 +19,7 @@ import db from "@/db/drizzle";
 import { socialMetrics } from "@/db/schema";
 import { and, between, eq } from "drizzle-orm";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function getMetricsDirectly(
   platform: string,
   businessUnit: string,
@@ -49,9 +51,10 @@ export default async function TrendsPage() {
   const defaultPlatform = "FACEBOOK";
   const defaultBusinessUnit = "ASM";
   
-  // Try to fetch data using the API first
-  let initialData = [];
+  // Fetch initial data with error handling
+  let initialData: SocialMetric[] = [];
   try {
+    // Use server action instead of API call
     initialData = await getSocialMetrics(
       defaultPlatform, 
       defaultBusinessUnit, 
@@ -59,25 +62,10 @@ export default async function TrendsPage() {
       endDate
     );
     
-    // If API call returned empty but didn't throw, try direct DB access
-    if (initialData.length === 0) {
-      console.log("API returned empty data, trying direct DB access");
-      initialData = await getMetricsDirectly(
-        defaultPlatform,
-        defaultBusinessUnit,
-        startDate,
-        endDate
-      );
-    }
+    console.log(`Fetched ${initialData.length} metrics for trends`);
   } catch (error) {
     console.error("Error fetching initial data for trends:", error);
-    // Try direct DB access as fallback
-    initialData = await getMetricsDirectly(
-      defaultPlatform,
-      defaultBusinessUnit,
-      startDate,
-      endDate
-    );
+    // Continue with empty data
   }
   
   return (
@@ -89,12 +77,12 @@ export default async function TrendsPage() {
       
       <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>
         <TrendsClient 
+          initialData={initialData as SocialMetric[]  }
           platforms={Object.values(PLATFORMS).filter(p => 
             p !== "WEBSITE" && p !== "NEWSLETTER"
           )}
           businessUnits={Object.values(BUSINESS_UNITS)}
           countries={Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))}
-          initialData={initialData}
         />
       </Suspense>
     </DashboardShell>

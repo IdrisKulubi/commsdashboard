@@ -25,6 +25,7 @@ import {
   PieChart,
   Pie,
   Cell,
+ 
 } from "recharts";
 import { BUSINESS_UNITS } from "@/lib/constants";
 
@@ -55,8 +56,8 @@ export function PlatformClient({
     from: new Date(new Date().setMonth(new Date().getMonth() - 6)),
     to: new Date(),
   });
-  const [businessUnit, setBusinessUnit] = useState(businessUnits[0]);
-  const [country, setCountry] = useState("GLOBAL");
+  const [selectedBusinessUnit, setSelectedBusinessUnit] = useState<string>("ASM");
+  const [selectedCountry, setSelectedCountry] = useState<string>("GLOBAL");
   
   // Handle filter changes
   const handleFilterChange = async () => {
@@ -75,14 +76,14 @@ export function PlatformClient({
       const [socialData, engagementData] = await Promise.all([
         getSocialMetrics(
           platform as keyof typeof PLATFORMS,
-          businessUnit as keyof typeof BUSINESS_UNITS,
+          selectedBusinessUnit as keyof typeof BUSINESS_UNITS,
           dateRange.from,
           dateRange.to,
-          country
+          selectedCountry
         ),
         getSocialEngagementMetrics(
           platform as keyof typeof PLATFORMS,
-          businessUnit as keyof typeof BUSINESS_UNITS,
+          selectedBusinessUnit as keyof typeof BUSINESS_UNITS,
           dateRange.from,
           dateRange.to
         ),
@@ -110,28 +111,6 @@ export function PlatformClient({
   };
   
   // Process data for charts
-  const processMonthlyData = (metrics: SocialMetric[], dataKey: keyof SocialMetric) => {
-    const monthlyData: Record<string, number> = {};
-    
-    metrics.forEach(metric => {
-      const date = new Date(metric.date);
-      const monthYear = format(date, "MMM yyyy");
-      
-      if (!monthlyData[monthYear]) {
-        monthlyData[monthYear] = 0;
-      }
-      
-      if (metric[dataKey] !== null && metric[dataKey] !== undefined) {
-        monthlyData[monthYear] += Number(metric[dataKey]);
-      }
-    });
-    
-    return Object.entries(monthlyData).map(([month, value]) => ({
-      month,
-      [dataKey]: value,
-    }));
-  };
-  
   const processEngagementData = (metrics: SocialEngagementMetric[]) => {
     const totalLikes = metrics.reduce((sum, metric) => sum + (metric.likes || 0), 0);
     const totalComments = metrics.reduce((sum, metric) => sum + (metric.comments || 0), 0);
@@ -147,12 +126,46 @@ export function PlatformClient({
   };
   
   // Prepare chart data
-  const followersData = processMonthlyData(data.socialMetrics, "followers");
-  const impressionsData = processMonthlyData(data.socialMetrics, "impressions");
-  const engagementData = processEngagementData(data.engagementMetrics);
-  
-  // Define table columns
-  const socialColumns: ColumnDef<SocialMetric>[] = [
+  const filteredSocialMetrics = data.socialMetrics.filter((metric) => {
+    const matchesBusinessUnit = selectedBusinessUnit === "ALL" || metric.businessUnit === selectedBusinessUnit;
+    const matchesCountry = selectedCountry === "GLOBAL" || metric.country === selectedCountry;
+    return matchesBusinessUnit && matchesCountry;
+  });
+
+  const filteredEngagementMetrics = data.engagementMetrics.filter((metric) => {
+    const matchesBusinessUnit = selectedBusinessUnit === "ALL" || metric.businessUnit === selectedBusinessUnit;
+    return matchesBusinessUnit;
+  });
+
+  const processFollowerData = () => {
+    // Group by date and calculate totals
+    const groupedByDate = filteredSocialMetrics.reduce((acc, metric) => {
+      const date = format(new Date(metric.date), "yyyy-MM-dd");
+      if (!acc[date]) {
+        acc[date] = {
+          date,
+          followers: 0,
+          posts: 0,
+        };
+      }
+      
+      acc[date].followers += metric.followers || 0;
+      acc[date].posts += metric.numberOfPosts || 0;
+      
+      return acc;
+    }, {} as Record<string, { date: string; followers: number; posts: number }>);
+    
+    // Convert to array and sort by date
+    return Object.values(groupedByDate)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  };
+
+  // Process data for charts
+  const followerData = processFollowerData();
+  const engagementData = processEngagementData(filteredEngagementMetrics);
+
+  // Define columns for the data tables
+  const socialMetricsColumns: ColumnDef<SocialMetric>[] = [
     {
       accessorKey: "date",
       header: "Date",
@@ -165,25 +178,24 @@ export function PlatformClient({
     {
       accessorKey: "country",
       header: "Country",
+      cell: ({ row }) => {
+        const country = countries.find(c => c.code === row.original.country);
+        return country ? country.name : row.original.country;
+      },
     },
     {
       accessorKey: "followers",
       header: "Followers",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.followers || 0),
-    },
-    {
-      accessorKey: "impressions",
-      header: "Impressions",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.impressions || 0),
+      cell: ({ row }) => row.original.followers?.toLocaleString() || "0",
     },
     {
       accessorKey: "numberOfPosts",
       header: "Posts",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.numberOfPosts || 0),
+      cell: ({ row }) => row.original.numberOfPosts?.toLocaleString() || "0",
     },
   ];
   
-  const engagementColumns: ColumnDef<SocialEngagementMetric>[] = [
+  const engagementMetricsColumns: ColumnDef<SocialEngagementMetric>[] = [
     {
       accessorKey: "date",
       header: "Date",
@@ -196,27 +208,22 @@ export function PlatformClient({
     {
       accessorKey: "likes",
       header: "Likes",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.likes || 0),
+      cell: ({ row }) => row.original.likes?.toLocaleString() || "0",
     },
     {
       accessorKey: "comments",
       header: "Comments",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.comments || 0),
+      cell: ({ row }) => row.original.comments?.toLocaleString() || "0",
     },
     {
       accessorKey: "shares",
       header: "Shares",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.shares || 0),
-    },
-    {
-      accessorKey: "saves",
-      header: "Saves",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.saves || 0),
+      cell: ({ row }) => row.original.shares?.toLocaleString() || "0",
     },
     {
       accessorKey: "engagementRate",
       header: "Engagement Rate",
-      cell: ({ row }) => `${((Number(row.original.engagementRate) || 0) * 100).toFixed(1)}%`,
+      cell: ({ row }) => `${row.original.engagementRate || "0"}%`,
     },
   ];
   
@@ -244,13 +251,14 @@ export function PlatformClient({
             <div className="space-y-2">
               <label className="text-sm font-medium">Business Unit</label>
               <Select 
-                value={businessUnit} 
-                onValueChange={setBusinessUnit}
+                value={selectedBusinessUnit} 
+                onValueChange={setSelectedBusinessUnit}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select business unit" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="ALL">All Business Units</SelectItem>
                   {businessUnits.map((bu) => (
                     <SelectItem key={bu} value={bu}>
                       {bu}
@@ -263,8 +271,8 @@ export function PlatformClient({
             <div className="space-y-2">
               <label className="text-sm font-medium">Country</label>
               <Select 
-                value={country} 
-                onValueChange={setCountry}
+                value={selectedCountry} 
+                onValueChange={setSelectedCountry}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select country" />
@@ -306,7 +314,7 @@ export function PlatformClient({
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={followersData}>
+              <LineChart data={followerData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -329,38 +337,6 @@ export function PlatformClient({
             </ResponsiveContainer>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Impressions Trend</CardTitle>
-            <CardDescription>Monthly impressions trend</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={impressionsData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value) => [
-                    new Intl.NumberFormat().format(value as number),
-                    "Impressions"
-                  ]}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="impressions" 
-                  name="Impressions" 
-                  stroke={platformColor} 
-                  strokeWidth={2}
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
       
       <Card>
         <CardHeader>
@@ -429,6 +405,7 @@ export function PlatformClient({
           </div>
         </CardContent>
       </Card>
+      </div>
       
       <Tabs defaultValue="metrics">
         <TabsList className="grid w-full grid-cols-2">
@@ -446,8 +423,8 @@ export function PlatformClient({
             </CardHeader>
             <CardContent>
               <DataTable 
-                columns={socialColumns} 
-                data={data.socialMetrics} 
+                columns={socialMetricsColumns} 
+                data={filteredSocialMetrics} 
               />
             </CardContent>
           </Card>
@@ -463,8 +440,8 @@ export function PlatformClient({
             </CardHeader>
             <CardContent>
               <DataTable 
-                columns={engagementColumns} 
-                data={data.engagementMetrics} 
+                columns={engagementMetricsColumns} 
+                data={filteredEngagementMetrics} 
               />
             </CardContent>
           </Card>

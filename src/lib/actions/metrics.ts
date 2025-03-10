@@ -1,17 +1,25 @@
 "use server";
 
 import db from "@/db/drizzle";
-import { and, eq, sql } from "drizzle-orm";
-import { socialMetrics, websiteMetrics, newsletterMetrics, NewsletterMetric, WebsiteMetric} from "@/db/schema";
+import { and, eq, sql, desc, between } from "drizzle-orm";
+import { 
+  socialMetrics, 
+  websiteMetrics, 
+  newsletterMetrics, 
+  socialEngagementMetrics,
+  NewsletterMetric, 
+  WebsiteMetric,
+  SocialEngagementMetric,
+  PLATFORMS,
+  BUSINESS_UNITS
+} from "@/db/schema";
 import {
   type SocialMetricFormData,
   type WebsiteMetricFormData,
   type NewsletterMetricFormData,
 } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
-import { PLATFORMS, BUSINESS_UNITS } from "@/db/schema";
 import { COUNTRIES } from "@/lib/constants";
-import {  between } from "drizzle-orm";
 import { InferSelectModel } from "drizzle-orm";
 
 type SocialMetricType = InferSelectModel<typeof socialMetrics>;
@@ -297,6 +305,9 @@ export async function updateMetric(metric: SocialMetricType | WebsiteMetric | Ne
   }
 }
 
+/**
+ * Get social metrics for a specific platform, business unit, and date range
+ */
 export async function getSocialMetrics(
   platform: string,
   businessUnit: string,
@@ -305,6 +316,8 @@ export async function getSocialMetrics(
   country: string = "GLOBAL"
 ): Promise<SocialMetricType[]> {
   try {
+    console.log(`Fetching social metrics for ${platform}, ${businessUnit}, ${startDate.toISOString()} to ${endDate.toISOString()}, country: ${country}`);
+    
     const conditions = [
       eq(socialMetrics.platform, platform as keyof typeof PLATFORMS),
       eq(socialMetrics.businessUnit, businessUnit as keyof typeof BUSINESS_UNITS),
@@ -321,10 +334,215 @@ export async function getSocialMetrics(
       orderBy: [socialMetrics.date],
     });
 
+    console.log(`Found ${metrics.length} social metrics`);
     return metrics;
-
   } catch (error) {
     console.error("Error fetching social metrics:", error);
-    throw error;
+    return [];
+  }
+}
+
+/**
+ * Get website metrics for a specific business unit and date range
+ */
+export async function getWebsiteMetrics(
+  businessUnit: string,
+  startDate: Date,
+  endDate: Date,
+  country: string = "GLOBAL"
+): Promise<WebsiteMetric[]> {
+  try {
+    console.log(`Fetching website metrics for ${businessUnit}, ${startDate.toISOString()} to ${endDate.toISOString()}, country: ${country}`);
+    
+    const conditions = [
+      eq(websiteMetrics.businessUnit, businessUnit as keyof typeof BUSINESS_UNITS),
+      between(websiteMetrics.date, startDate, endDate)
+    ];
+
+    // Add country filter if not GLOBAL
+    if (country !== "GLOBAL") {
+      conditions.push(eq(websiteMetrics.country, country));
+    }
+
+    const metrics = await db.query.websiteMetrics.findMany({
+      where: and(...conditions),
+      orderBy: [websiteMetrics.date],
+    });
+
+    console.log(`Found ${metrics.length} website metrics`);
+    return metrics;
+  } catch (error) {
+    console.error("Error fetching website metrics:", error);
+    return [];
+  }
+}
+
+/**
+ * Get newsletter metrics for a specific business unit and date range
+ */
+export async function getNewsletterMetrics(
+  businessUnit: string,
+  startDate: Date,
+  endDate: Date,
+  country: string = "GLOBAL"
+): Promise<NewsletterMetric[]> {
+  try {
+    console.log(`Fetching newsletter metrics for ${businessUnit}, ${startDate.toISOString()} to ${endDate.toISOString()}, country: ${country}`);
+    
+    const conditions = [
+      eq(newsletterMetrics.businessUnit, businessUnit as keyof typeof BUSINESS_UNITS),
+      between(newsletterMetrics.date, startDate, endDate)
+    ];
+
+    // Add country filter if not GLOBAL
+    if (country !== "GLOBAL") {
+      conditions.push(eq(newsletterMetrics.country, country));
+    }
+
+    const metrics = await db.query.newsletterMetrics.findMany({
+      where: and(...conditions),
+      orderBy: [newsletterMetrics.date],
+    });
+
+    console.log(`Found ${metrics.length} newsletter metrics`);
+    return metrics;
+  } catch (error) {
+    console.error("Error fetching newsletter metrics:", error);
+    return [];
+  }
+}
+
+/**
+ * Get social engagement metrics for a specific platform, business unit, and date range
+ */
+export async function getSocialEngagementMetrics(
+  platform: string,
+  businessUnit: string,
+  startDate: Date,
+  endDate: Date,
+  country: string = "GLOBAL"
+): Promise<SocialEngagementMetric[]> {
+  try {
+    console.log(`Fetching social engagement metrics for ${platform}, ${businessUnit}, ${startDate.toISOString()} to ${endDate.toISOString()}, country: ${country}`);
+    
+    const conditions = [
+      eq(socialEngagementMetrics.platform, platform as keyof typeof PLATFORMS),
+      eq(socialEngagementMetrics.businessUnit, businessUnit as keyof typeof BUSINESS_UNITS),
+      between(socialEngagementMetrics.date, startDate, endDate)
+    ];
+
+    // Add country filter if not GLOBAL
+    if (country !== "GLOBAL") {
+      conditions.push(eq(socialEngagementMetrics.country, country));
+    }
+
+    const metrics = await db.query.socialEngagementMetrics.findMany({
+      where: and(...conditions),
+      orderBy: [socialEngagementMetrics.date],
+    });
+
+    console.log(`Found ${metrics.length} social engagement metrics`);
+    return metrics;
+  } catch (error) {
+    console.error("Error fetching social engagement metrics:", error);
+    return [];
+  }
+}
+
+/**
+ * Get total metrics across all platforms and business units
+ */
+export async function getTotalMetrics() {
+  try {
+    console.log("Fetching total metrics");
+    
+    // Get the most recent date for which we have data
+    const latestSocialMetric = await db.query.socialMetrics.findFirst({
+      orderBy: [desc(socialMetrics.date)],
+    });
+    
+    if (!latestSocialMetric) {
+      console.log("No social metrics found");
+      return {
+        totalFollowers: 0,
+        totalWebsiteUsers: 0,
+        totalNewsletterRecipients: 0,
+        totalPosts: 0,
+      };
+    }
+    
+    console.log("Latest social metric date:", latestSocialMetric.date);
+    
+    // Get all social metrics for the latest date
+    const allSocialMetrics = await db.query.socialMetrics.findMany({
+      where: eq(socialMetrics.date, latestSocialMetric.date),
+    });
+    
+    // Calculate total followers and posts
+    let totalFollowers = 0;
+    let totalPosts = 0;
+    
+    for (const metric of allSocialMetrics) {
+      totalFollowers += metric.followers || 0;
+      totalPosts += metric.numberOfPosts || 0;
+    }
+    
+    console.log("Total followers:", totalFollowers);
+    console.log("Total posts:", totalPosts);
+    
+    // Get the latest website metrics
+    const latestWebsiteMetric = await db.query.websiteMetrics.findFirst({
+      orderBy: [desc(websiteMetrics.date)],
+    });
+    
+    // Get all website metrics for the latest date
+    let totalWebsiteUsers = 0;
+    
+    if (latestWebsiteMetric) {
+      const allWebsiteMetrics = await db.query.websiteMetrics.findMany({
+        where: eq(websiteMetrics.date, latestWebsiteMetric.date),
+      });
+      
+      for (const metric of allWebsiteMetrics) {
+        totalWebsiteUsers += metric.users || 0;
+      }
+    }
+    
+    console.log("Total website users:", totalWebsiteUsers);
+    
+    // Get the latest newsletter metrics
+    const latestNewsletterMetric = await db.query.newsletterMetrics.findFirst({
+      orderBy: [desc(newsletterMetrics.date)],
+    });
+    
+    // Get all newsletter metrics for the latest date
+    let totalNewsletterRecipients = 0;
+    
+    if (latestNewsletterMetric) {
+      const allNewsletterMetrics = await db.query.newsletterMetrics.findMany({
+        where: eq(newsletterMetrics.date, latestNewsletterMetric.date),
+      });
+      
+      for (const metric of allNewsletterMetrics) {
+        totalNewsletterRecipients += metric.recipients || 0;
+      }
+    }
+    
+    console.log("Total newsletter recipients:", totalNewsletterRecipients);
+    
+    return {
+      totalFollowers,
+      totalWebsiteUsers,
+      totalNewsletterRecipients,
+      totalPosts,
+    };
+  } catch (error) {
+    console.error("Error calculating total metrics:", error);
+    return {
+      totalFollowers: 0,
+      totalWebsiteUsers: 0,
+      totalNewsletterRecipients: 0,
+      totalPosts: 0,
+    };
   }
 }

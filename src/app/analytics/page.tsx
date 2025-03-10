@@ -1,14 +1,22 @@
 import { Metadata } from "next";
+import { AnalyticsClient } from "@/components/analytics/analytics-client";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { AnalyticsClient } from "@/components/analytics/analytics-client";
-import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics, getSocialEngagementMetrics } from "@/lib/api";
-import { PLATFORMS, BUSINESS_UNITS } from "@/db/schema";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+// Import server actions
+import { 
+  getSocialMetrics, 
+  getWebsiteMetrics, 
+  getNewsletterMetrics, 
+  getSocialEngagementMetrics 
+} from "@/lib/actions/metrics";
+import { PLATFORMS, BUSINESS_UNITS, SocialMetric, NewsletterMetric, SocialEngagementMetric, WebsiteMetric } from "@/db/schema";
 import { COUNTRIES } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Analytics",
-  description: "Detailed analytics for your communications metrics",
+  description: "View detailed analytics for your communications metrics",
 };
 
 export default async function AnalyticsPage() {
@@ -21,45 +29,67 @@ export default async function AnalyticsPage() {
   const defaultPlatform = "FACEBOOK";
   const defaultBusinessUnit = "ASM";
   
-  // Fetch initial data
-  const initialData = {
-    socialMetrics: await getSocialMetrics(
-      defaultPlatform as keyof typeof PLATFORMS, 
-      defaultBusinessUnit as keyof typeof BUSINESS_UNITS, 
-      startDate, 
-      endDate
-    ),
-    websiteMetrics: await getWebsiteMetrics(
-      defaultBusinessUnit as keyof typeof BUSINESS_UNITS, 
-      startDate, 
-      endDate
-    ),
-    newsletterMetrics: await getNewsletterMetrics(
-      defaultBusinessUnit as keyof typeof BUSINESS_UNITS, 
-      startDate, 
-      endDate
-    ),
-    socialEngagementMetrics: await getSocialEngagementMetrics(
-      defaultPlatform as keyof typeof PLATFORMS, 
-      defaultBusinessUnit as keyof typeof BUSINESS_UNITS, 
-      startDate, 
-      endDate
-    ),
-  };
+  // Fetch initial data with error handling
+  let socialMetrics: SocialMetric[] = [];
+  let websiteMetrics: WebsiteMetric[] = [];
+  let newsletterMetrics: NewsletterMetric[] = [];
+  let socialEngagementMetrics: SocialEngagementMetric[] = [];
+  
+  try {
+    // Use server actions instead of API calls
+    [socialMetrics, websiteMetrics, newsletterMetrics, socialEngagementMetrics] = await Promise.all([
+      getSocialMetrics(
+        defaultPlatform, 
+        defaultBusinessUnit, 
+        startDate, 
+        endDate
+      ),
+      getWebsiteMetrics(
+        defaultBusinessUnit, 
+        startDate, 
+        endDate
+      ),
+      getNewsletterMetrics(
+        defaultBusinessUnit, 
+        startDate, 
+        endDate
+      ),
+      getSocialEngagementMetrics(
+        defaultPlatform, 
+        defaultBusinessUnit, 
+        startDate, 
+        endDate
+      ),
+    ]);
+    
+    console.log(`Fetched initial data for analytics: ${socialMetrics.length} social metrics, ${websiteMetrics.length} website metrics, ${newsletterMetrics.length} newsletter metrics, ${socialEngagementMetrics.length} engagement metrics`);
+  } catch (error) {
+    console.error("Error fetching initial data for analytics:", error);
+    // Continue with empty data
+  }
   
   return (
     <DashboardShell>
       <DashboardHeader
-        heading="Analytics"
-        description="Detailed analysis of your communications metrics across all platforms."
+        heading="Analytics Dashboard"
+        description="View detailed analytics for your communications metrics"
       />
       
-      <AnalyticsClient 
-        initialData={initialData}
-        platforms={Object.values(PLATFORMS)}
-        businessUnits={Object.values(BUSINESS_UNITS)}
-        countries={Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))}
-      />
+      <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>
+        <AnalyticsClient 
+          initialData={{
+            socialMetrics,
+            websiteMetrics,
+            newsletterMetrics,
+            socialEngagementMetrics,
+          }}
+          platforms={Object.values(PLATFORMS).filter(p => 
+            p !== "WEBSITE" && p !== "NEWSLETTER"
+          )}
+          businessUnits={Object.values(BUSINESS_UNITS)}
+          countries={Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))}
+        />
+      </Suspense>
     </DashboardShell>
   );
 } 

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { SocialMetric, WebsiteMetric, NewsletterMetric, SocialEngagementMetric, BUSINESS_UNITS } from "@/db/schema";
+import { SocialMetric, WebsiteMetric, NewsletterMetric, SocialEngagementMetric, BUSINESS_UNITS, PLATFORMS } from "@/db/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -15,17 +15,18 @@ import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics, getSocialEng
 import { EngagementBreakdown } from "@/components/analytics/engagement-breakdown";
 import { Loader2 } from "lucide-react";
 import { MetricsChart } from "./metrics-chart";
+import { COUNTRIES } from "@/lib/constants";
 
 interface AnalyticsClientProps {
   initialData: {
-    socialMetrics: SocialMetric[];
-    websiteMetrics: WebsiteMetric[];
-    newsletterMetrics: NewsletterMetric[];
-    socialEngagementMetrics: SocialEngagementMetric[];
+    socialMetrics: any[];
+    websiteMetrics: any[];
+    newsletterMetrics: any[];
+    socialEngagementMetrics: any[];
   };
-  platforms: string[];
-  businessUnits: string[];
-  countries: { code: string; name: string }[];
+  platforms?: string[];
+  businessUnits?: string[];
+  countries?: { code: string; name: string }[];
 }
 
 // Define platform and business unit types using the imported constants
@@ -34,9 +35,9 @@ type SocialPlatformType = "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK";
 
 export function AnalyticsClient({ 
   initialData, 
-  platforms, 
-  businessUnits, 
-  countries 
+  platforms = Object.values(PLATFORMS).filter(p => p !== "WEBSITE" && p !== "NEWSLETTER"),
+  businessUnits = Object.values(BUSINESS_UNITS),
+  countries = Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))
 }: AnalyticsClientProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);

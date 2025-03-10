@@ -1,10 +1,14 @@
 import { Metadata } from "next";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { WebsitePlatformClient } from "@/components/platforms/website-platform-client";
-import { getWebsiteMetrics } from "@/lib/api";
-import { BUSINESS_UNITS } from "@/db/schema";
+import { BUSINESS_UNITS, WebsiteMetric } from "@/db/schema";
 import { COUNTRIES } from "@/lib/constants";
 import { Globe } from "lucide-react";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { WebsiteClient } from "@/components/platforms/website-client";
+// Import server actions
+import { getWebsiteMetrics } from "@/lib/actions/metrics";
 
 export const metadata: Metadata = {
   title: "Website Analytics",
@@ -17,34 +21,46 @@ export default async function WebsitePage() {
   const startDate = new Date();
   startDate.setMonth(startDate.getMonth() - 6);
   
-  // Fetch initial data for all business units
-  const businessUnits = Object.values(BUSINESS_UNITS) as ("ASM" | "IACL" | "EM")[];
+  // Get data for all business units
+  const businessUnits = Object.values(BUSINESS_UNITS);
   
-  const websiteMetricsPromises = businessUnits.map(businessUnit => 
-    getWebsiteMetrics(businessUnit, startDate, endDate)
-  );
+  // Fetch website metrics for all business units with error handling
+  let websiteMetrics: WebsiteMetric[] = [];
   
-  const websiteMetricsResults = await Promise.all(websiteMetricsPromises);
-  
-  // Flatten the arrays
-  const websiteMetrics = websiteMetricsResults.flat();
+  try {
+    // Use Promise.all to fetch data for all business units in parallel
+    const websiteMetricsPromises = businessUnits.map(bu => 
+      getWebsiteMetrics(bu, startDate, endDate)
+    );
+    
+    // Wait for all promises to resolve
+    const websiteMetricsResults = await Promise.all(websiteMetricsPromises);
+    
+    // Flatten the arrays
+    websiteMetrics = websiteMetricsResults.flat();
+    
+    console.log(`Fetched ${websiteMetrics.length} website metrics`);
+  } catch (error) {
+    console.error("Error fetching data for Website:", error);
+    // Continue with empty data
+  }
   
   return (
-    <>
+    <DashboardShell>
       <DashboardHeader
         heading="Website Analytics"
         description="Detailed analytics for Website traffic"
       >
-        <Globe className="h-6 w-6 text-blue-500" />
+        <Globe className="h-6 w-6 text-primary" />
       </DashboardHeader>
       
-      <WebsitePlatformClient
-        initialData={{
-          websiteMetrics,
-        }}
-        businessUnits={Object.values(BUSINESS_UNITS)}
-        countries={Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))}
-      />
-    </>
+      <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>
+        <WebsiteClient
+          initialData={websiteMetrics}
+          businessUnits={businessUnits}
+          countries={Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))}
+        />
+      </Suspense>
+    </DashboardShell>
   );
 } 

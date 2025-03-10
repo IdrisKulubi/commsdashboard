@@ -5,21 +5,31 @@ import { SocialMetric, WebsiteMetric, NewsletterMetric, SocialEngagementMetric }
 function getBaseUrl() {
   // For server-side rendering
   if (typeof window === 'undefined') {
+    // Log environment variables to understand what we're working with
+    console.log("VERCEL_URL:", process.env.VERCEL_URL);
+    console.log("VERCEL_ENV:", process.env.VERCEL_ENV);
+    
     // In production on Vercel
     if (process.env.VERCEL_URL) {
-      return `https://${process.env.VERCEL_URL}`;
+      const url = `https://${process.env.VERCEL_URL}`;
+      console.log("Using Vercel URL:", url);
+      return url;
     }
     
     // For preview deployments
     if (process.env.VERCEL_ENV === 'preview') {
-      return `https://${process.env.VERCEL_URL}`;
+      const url = `https://${process.env.VERCEL_URL}`;
+      console.log("Using preview URL:", url);
+      return url;
     }
     
     // Fallback for development
+    console.log("Using localhost URL");
     return 'http://localhost:3000';
   }
   
   // For client-side rendering, use relative URLs
+  console.log("Using client-side relative URL");
   return '';
 }
 
@@ -27,7 +37,11 @@ function getBaseUrl() {
 async function fetchWithFallback<T>(url: string, options = {}, fallbackData: T): Promise<T> {
   try {
     const baseUrl = getBaseUrl();
-    const fullUrl = `${baseUrl}${url}`;
+    
+    // Ensure URL doesn't have double slashes when joining
+    const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+    const fullUrl = `${normalizedBaseUrl}${normalizedPath}`;
     
     console.log(`Fetching from: ${fullUrl}`); // Debug log
     
