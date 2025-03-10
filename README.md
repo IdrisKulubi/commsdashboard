@@ -1,6 +1,32 @@
-# Social Media Dashboard
+# Communications Dashboard
 
-A modern social media analytics dashboard built with Next.js 15, React 19, and TypeScript. This application provides a centralized view of social media metrics and engagement analytics across multiple platforms.
+A dashboard for tracking and analyzing communications metrics across different platforms and business units.
+
+## Recent Updates
+
+### Metrics Fetching Improvements
+
+We've made significant improvements to how metrics are fetched throughout the application:
+
+1. **Server Actions Instead of API Routes**
+   - Replaced all API route calls with direct server actions
+   - Eliminated network timeouts and connection errors
+   - Improved performance by reducing network overhead
+
+2. **Enhanced Error Handling**
+   - Added comprehensive try/catch blocks around all data fetching
+   - Implemented graceful fallbacks to empty arrays when data fetching fails
+   - Added detailed logging for easier debugging
+
+3. **UI Improvements**
+   - Added Suspense boundaries with Skeleton loaders for better loading states
+   - Wrapped pages in DashboardShell for consistent layout
+   - Improved component structure for better maintainability
+
+4. **Data Processing Optimizations**
+   - Improved calculation of total metrics to avoid double-counting
+   - Enhanced filtering logic for more accurate metrics
+   - Added proper typing for all data structures
 
 ## Features
 
@@ -23,44 +49,34 @@ A modern social media analytics dashboard built with Next.js 15, React 19, and T
 
 ## Getting Started
 
-### Prerequisites
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Set up your database connection in `.env`
+4. Run the development server with `npm run dev`
 
-- Node.js 18.0 or later
-- npm, yarn, or pnpm
+## Architecture
 
-### Installation
+The application uses:
+- Next.js 14 with App Router
+- Drizzle ORM for database access
+- React Server Components for efficient rendering
+- Tailwind CSS and Shadcn UI for styling
+- TypeScript for type safety
 
-1. Clone the repository:
-```bash
-git clone https://github.com/IdrisKulubi/commsdashboard.git
-cd commsdashboard
-```
+## Data Flow
 
-2. Install dependencies:
-```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
-```
+1. Server Components fetch data directly from the database using Drizzle ORM
+2. Data is processed and passed to Client Components
+3. Client Components handle user interactions and filtering
+4. Updates are made through Server Actions for optimal performance
 
-3. Create a `.env.local` file in the root directory and add your environment variables:
-```env
-# Add your environment variables here
-POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/postgres
-```
+## Troubleshooting
 
-4. Start the development server:
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
-
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+If you encounter issues with data fetching:
+1. Check database connection settings
+2. Verify that the database schema matches the expected structure
+3. Look for detailed error logs in the console
+4. Ensure server actions are properly exported with the "use server" directive
 
 ## Project Structure
 

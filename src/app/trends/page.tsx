@@ -14,57 +14,41 @@ export const metadata: Metadata = {
   description: "Analyze trends in your communications metrics",
 };
 
-// Add a direct database query function as backup
-import db from "@/db/drizzle";
-import { socialMetrics } from "@/db/schema";
-import { and, between, eq } from "drizzle-orm";
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function getMetricsDirectly(
-  platform: string,
-  businessUnit: string,
-  startDate: Date,
-  endDate: Date
-) {
-  try {
-    return await db.query.socialMetrics.findMany({
-      where: and(
-        eq(socialMetrics.platform, platform as "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK" | "WEBSITE" | "NEWSLETTER"),
-        eq(socialMetrics.businessUnit, businessUnit as "ASM" | "IACL" | "EM"),
-        between(socialMetrics.date, startDate, endDate)
-      ),
-      orderBy: [socialMetrics.date],
-    });
-  } catch (error) {
-    console.error("Error fetching directly from DB:", error);
-    return [];
-  }
-}
-
 export default async function TrendsPage() {
-  // Default to last 12 months of data
+  // Default to last 6 months of data
   const endDate = new Date();
   const startDate = new Date();
-  startDate.setMonth(startDate.getMonth() - 12);
+  startDate.setMonth(startDate.getMonth() - 6);
   
-  // Default platform and business unit
-  const defaultPlatform = "FACEBOOK";
-  const defaultBusinessUnit = "ASM";
+  // Get all platforms and business units
+  const platforms = Object.values(PLATFORMS).filter(p => 
+    p !== "WEBSITE" && p !== "NEWSLETTER"
+  ) as ("FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK")[];
   
-  // Fetch initial data with error handling
-  let initialData: SocialMetric[] = [];
+  const businessUnits = Object.values(BUSINESS_UNITS);
+  
+  // Initialize data container
+  let allMetrics: SocialMetric[] = [];
+  
   try {
-    // Use server action instead of API call
-    initialData = await getSocialMetrics(
-      defaultPlatform, 
-      defaultBusinessUnit, 
-      startDate, 
-      endDate
-    );
+    // Create promises for all combinations of platforms and business units
+    const promises: Promise<SocialMetric[]>[] = [];
     
-    console.log(`Fetched ${initialData.length} metrics for trends`);
+    for (const platform of platforms) {
+      for (const businessUnit of businessUnits) {
+        promises.push(getSocialMetrics(platform, businessUnit, startDate, endDate));
+      }
+    }
+    
+    // Wait for all promises to resolve
+    const results = await Promise.all(promises);
+    
+    // Flatten the results
+    allMetrics = results.flat();
+    
+    console.log(`Fetched ${allMetrics.length} metrics for trends analysis`);
   } catch (error) {
-    console.error("Error fetching initial data for trends:", error);
+    console.error("Error fetching data for trends analysis:", error);
     // Continue with empty data
   }
   
@@ -72,16 +56,14 @@ export default async function TrendsPage() {
     <DashboardShell>
       <DashboardHeader
         heading="Trends Analysis"
-        description="Analyze growth trends and patterns across platforms and business units."
+        description="Compare metrics across platforms and business units"
       />
       
       <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>
-        <TrendsClient 
-          initialData={initialData as SocialMetric[]  }
-          platforms={Object.values(PLATFORMS).filter(p => 
-            p !== "WEBSITE" && p !== "NEWSLETTER"
-          )}
-          businessUnits={Object.values(BUSINESS_UNITS)}
+        <TrendsClient
+          initialData={allMetrics}
+          platforms={platforms}
+          businessUnits={businessUnits}
           countries={Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))}
         />
       </Suspense>

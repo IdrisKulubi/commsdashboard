@@ -2,17 +2,12 @@ import { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { BusinessUnitClient } from "@/components/business-units/business-unit-client";
-import { PLATFORMS } from "@/db/schema";
+import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics, getSocialEngagementMetrics } from "@/lib/actions/metrics";
+import { PLATFORMS, SocialMetric, WebsiteMetric, NewsletterMetric, SocialEngagementMetric } from "@/db/schema";
 import { COUNTRIES } from "@/lib/constants";
+import { Building2 } from "lucide-react";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-// Import server actions
-import { 
-  getSocialMetrics, 
-  getWebsiteMetrics, 
-  getNewsletterMetrics, 
-  getSocialEngagementMetrics 
-} from "@/lib/actions/metrics";
 
 export const metadata: Metadata = {
   title: "IACL Analytics",
@@ -31,20 +26,21 @@ export default async function IACLPage() {
   // Get data for all platforms
   const platforms = Object.values(PLATFORMS).filter(p => 
     p !== "WEBSITE" && p !== "NEWSLETTER"
-  );
+  ) as ("FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK")[];
   
-  // Fetch data with error handling
-  let socialMetrics = [];
-  let websiteMetrics = [];
-  let newsletterMetrics = [];
-  let socialEngagementMetrics = [];
+  // Initialize data containers
+  let socialMetrics: SocialMetric[] = [];
+  let engagementMetrics: SocialEngagementMetric[] = [];
+  let websiteMetrics: WebsiteMetric[] = [];
+  let newsletterMetrics: NewsletterMetric[] = [];
   
   try {
-    // Use Promise.all to fetch data for all platforms in parallel
+    // Fetch social metrics for all platforms
     const socialMetricsPromises = platforms.map(platform => 
       getSocialMetrics(platform, businessUnit, startDate, endDate)
     );
     
+    // Fetch engagement metrics for all platforms
     const engagementMetricsPromises = platforms.map(platform => 
       getSocialEngagementMetrics(platform, businessUnit, startDate, endDate)
     );
@@ -54,12 +50,7 @@ export default async function IACLPage() {
     const newsletterMetricsPromise = getNewsletterMetrics(businessUnit, startDate, endDate);
     
     // Wait for all promises to resolve
-    const [
-      socialMetricsResults, 
-      engagementMetricsResults, 
-      websiteMetricsResult, 
-      newsletterMetricsResult
-    ] = await Promise.all([
+    const [socialMetricsResults, engagementMetricsResults, websiteMetricsResult, newsletterMetricsResult] = await Promise.all([
       Promise.all(socialMetricsPromises),
       Promise.all(engagementMetricsPromises),
       websiteMetricsPromise,
@@ -68,11 +59,11 @@ export default async function IACLPage() {
     
     // Flatten the arrays
     socialMetrics = socialMetricsResults.flat();
-    socialEngagementMetrics = engagementMetricsResults.flat();
+    engagementMetrics = engagementMetricsResults.flat();
     websiteMetrics = websiteMetricsResult;
     newsletterMetrics = newsletterMetricsResult;
     
-    console.log(`Fetched data for IACL: ${socialMetrics.length} social metrics, ${websiteMetrics.length} website metrics, ${newsletterMetrics.length} newsletter metrics, ${socialEngagementMetrics.length} engagement metrics`);
+    console.log(`Fetched ${socialMetrics.length} social metrics, ${engagementMetrics.length} engagement metrics, ${websiteMetrics.length} website metrics, and ${newsletterMetrics.length} newsletter metrics for IACL`);
   } catch (error) {
     console.error("Error fetching data for IACL business unit:", error);
     // Continue with empty data
@@ -83,7 +74,9 @@ export default async function IACLPage() {
       <DashboardHeader
         heading="IACL Analytics"
         description="Detailed analytics for IACL business unit"
-      />
+      >
+        <Building2 className="h-6 w-6 text-green-500" />
+      </DashboardHeader>
       
       <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>
         <BusinessUnitClient
@@ -92,7 +85,7 @@ export default async function IACLPage() {
             socialMetrics,
             websiteMetrics,
             newsletterMetrics,
-            socialEngagementMetrics,
+            engagementMetrics,
           }}
           platforms={platforms}
           countries={Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))}
