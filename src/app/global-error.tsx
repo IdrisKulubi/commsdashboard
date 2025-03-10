@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function GlobalError({
@@ -27,12 +28,20 @@ export default function GlobalError({
               </span>
             )}
           </p>
-          <button
-            onClick={() => reset()}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Try again
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => reset()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Try again
+            </button>
+            <Link
+              href="/"
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Go to Home
+            </Link>
+          </div>
         </div>
       </body>
     </html>

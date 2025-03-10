@@ -4,7 +4,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SocialMetric, WebsiteMetric, NewsletterMetric } from "@/db/schema";
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import {
   AreaChart,
@@ -20,19 +19,18 @@ import { ComparisonChart } from "@/components/trends/comparison-chart";
 import { GrowthChart } from "@/components/trends/growth-chart";
 
 interface TrendsClientProps {
-  socialMetrics: SocialMetric[];
-  websiteMetrics: WebsiteMetric[];
-  newsletterMetrics: NewsletterMetric[];
+  initialData: any[];
   platforms: string[];
   businessUnits: string[];
+  countries: { code: string; name: string }[];
 }
 
-export function TrendsClient({
-  socialMetrics,
-  websiteMetrics,
-  newsletterMetrics,
-  platforms,
-  businessUnits,
+export function TrendsClient({ 
+  initialData, 
+  platforms, 
+  businessUnits, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  countries 
 }: TrendsClientProps) {
   const [mounted, setMounted] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState(platforms[0]);
@@ -83,15 +81,15 @@ export function TrendsClient({
   };
   
   // Filter data by selected platform and business unit
-  const filteredSocialMetrics = socialMetrics.filter(
+  const filteredSocialMetrics = initialData.filter(
     item => item.platform === selectedPlatform && item.businessUnit === selectedBusinessUnit
   );
   
-  const filteredWebsiteMetrics = websiteMetrics.filter(
+  const filteredWebsiteMetrics = initialData.filter(
     item => item.businessUnit === selectedBusinessUnit
   );
   
-  const filteredNewsletterMetrics = newsletterMetrics.filter(
+  const filteredNewsletterMetrics = initialData.filter(
     item => item.businessUnit === selectedBusinessUnit
   );
   
@@ -291,7 +289,7 @@ export function TrendsClient({
         <ComparisonChart 
           platforms={platforms}
           businessUnits={businessUnits}
-          socialMetrics={socialMetrics}
+          socialMetrics={initialData}
         />
         
         <GrowthChart 

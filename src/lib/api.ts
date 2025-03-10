@@ -1,22 +1,52 @@
 import { SocialMetric, WebsiteMetric, NewsletterMetric, SocialEngagementMetric } from "@/db/schema";
-import db from "@/db/drizzle";
-import { desc, sql } from "drizzle-orm";
-import { socialMetrics, websiteMetrics, newsletterMetrics } from "@/db/schema";
+
 
 // Helper function to get the base URL
 function getBaseUrl() {
-  if (typeof window !== 'undefined') {
-    // Browser should use relative path
-    return '';
+  // For server-side rendering
+  if (typeof window === 'undefined') {
+    // In production on Vercel
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}`;
+    }
+    
+    // For preview deployments
+    if (process.env.VERCEL_ENV === 'preview') {
+      return `https://${process.env.VERCEL_URL}`;
+    }
+    
+    // Fallback for development
+    return 'http://localhost:3000';
   }
   
-  // Server should use absolute URL
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  // For client-side rendering, use relative URLs
+  return '';
+}
+
+// Helper function to handle API requests with error handling and fallbacks
+async function fetchWithFallback<T>(url: string, options = {}, fallbackData: T): Promise<T> {
+  try {
+    const baseUrl = getBaseUrl();
+    const fullUrl = `${baseUrl}${url}`;
+    
+    console.log(`Fetching from: ${fullUrl}`); // Debug log
+    
+    const response = await fetch(fullUrl, {
+      ...options,
+      cache: 'no-store', // Disable caching
+      next: { revalidate: 0 }, // Don't revalidate
+    });
+    
+    if (!response.ok) {
+      console.error(`API error: ${response.status} for ${fullUrl}`);
+      return fallbackData;
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching from ${url}:`, error);
+    return fallbackData;
   }
-  
-  // Fallback for local development
-  return 'http://localhost:3000';
 }
 
 export async function getSocialMetrics(
@@ -34,16 +64,11 @@ export async function getSocialMetrics(
     country,
   });
 
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/analytics/social-metrics?${params.toString()}`, {
-    cache: 'no-store'
-  });
-  
-  if (!response.ok) {
-    throw new Error("Failed to fetch social metrics");
-  }
-  
-  return response.json();
+  return fetchWithFallback<SocialMetric[]>(
+    `/api/analytics/social-metrics?${params.toString()}`,
+    {},
+    [] // Fallback to empty array
+  );
 }
 
 export async function getWebsiteMetrics(
@@ -59,16 +84,11 @@ export async function getWebsiteMetrics(
     country,
   });
 
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/analytics/website-metrics?${params.toString()}`, {
-    cache: 'no-store'
-  });
-  
-  if (!response.ok) {
-    throw new Error("Failed to fetch website metrics");
-  }
-  
-  return response.json();
+  return fetchWithFallback<WebsiteMetric[]>(
+    `/api/analytics/website-metrics?${params.toString()}`,
+    {},
+    [] // Fallback to empty array
+  );
 }
 
 export async function getNewsletterMetrics(
@@ -84,16 +104,11 @@ export async function getNewsletterMetrics(
     country,
   });
 
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/analytics/newsletter-metrics?${params.toString()}`, {
-    cache: 'no-store'
-  });
-  
-  if (!response.ok) {
-    throw new Error("Failed to fetch newsletter metrics");
-  }
-  
-  return response.json();
+  return fetchWithFallback<NewsletterMetric[]>(
+    `/api/analytics/newsletter-metrics?${params.toString()}`,
+    {},
+    [] // Fallback to empty array
+  );
 }
 
 export async function getSocialEngagementMetrics(
@@ -111,92 +126,23 @@ export async function getSocialEngagementMetrics(
     country,
   });
 
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/analytics/social-engagement-metrics?${params.toString()}`, {
-    cache: 'no-store'
-  });
-  
-  if (!response.ok) {
-    throw new Error("Failed to fetch social engagement metrics");
-  }
-  
-  return response.json();
+  return fetchWithFallback<SocialEngagementMetric[]>(
+    `/api/analytics/social-engagement-metrics?${params.toString()}`,
+    {},
+    [] // Fallback to empty array
+  );
 }
 
 // Direct database access for server components
 export async function getTotalMetrics() {
-  try {
-    // Get the most recent date for which we have data
-    const latestSocialMetric = await db.query.socialMetrics.findFirst({
-      orderBy: [desc(socialMetrics.date)],
-    });
-    
-    if (!latestSocialMetric) {
-      return {
-        totalFollowers: 0,
-        totalWebsiteUsers: 0,
-        totalNewsletterRecipients: 0,
-        totalPosts: 0,
-      };
-    }
-    
-    // Get total followers across all platforms
-    const totalFollowersResult = await db
-      .select({ 
-        total: sql`SUM(${socialMetrics.followers})` 
-      })
-      .from(socialMetrics)
-      .where(sql`${socialMetrics.date} = ${latestSocialMetric.date}`);
-    
-    // Get total website users
-    const latestWebsiteMetric = await db.query.websiteMetrics.findFirst({
-      orderBy: [desc(websiteMetrics.date)],
-    });
-    
-    const totalWebsiteUsersResult = latestWebsiteMetric 
-      ? await db
-          .select({ 
-            total: sql`SUM(${websiteMetrics.users})` 
-          })
-          .from(websiteMetrics)
-          .where(sql`${websiteMetrics.date} = ${latestWebsiteMetric.date}`)
-      : [{ total: 0 }];
-    
-    // Get total newsletter recipients
-    const latestNewsletterMetric = await db.query.newsletterMetrics.findFirst({
-      orderBy: [desc(newsletterMetrics.date)],
-    });
-    
-    const totalNewsletterRecipientsResult = latestNewsletterMetric
-      ? await db
-          .select({ 
-            total: sql`SUM(${newsletterMetrics.recipients})` 
-          })
-          .from(newsletterMetrics)
-          .where(sql`${newsletterMetrics.date} = ${latestNewsletterMetric.date}`)
-      : [{ total: 0 }];
-    
-    // Get total posts across all platforms
-    const totalPostsResult = await db
-      .select({ 
-        total: sql`SUM(${socialMetrics.numberOfPosts})` 
-      })
-      .from(socialMetrics)
-      .where(sql`${socialMetrics.date} = ${latestSocialMetric.date}`);
-    
-    return {
-      totalFollowers: Number(totalFollowersResult[0]?.total || 0),
-      totalWebsiteUsers: Number(totalWebsiteUsersResult[0]?.total || 0),
-      totalNewsletterRecipients: Number(totalNewsletterRecipientsResult[0]?.total || 0),
-      totalPosts: Number(totalPostsResult[0]?.total || 0),
-    };
-  } catch (error) {
-    console.error("Error fetching total metrics:", error);
-    return {
+  return fetchWithFallback(
+    '/api/analytics/total-metrics',
+    {},
+    {
       totalFollowers: 0,
       totalWebsiteUsers: 0,
       totalNewsletterRecipients: 0,
       totalPosts: 0,
-    };
-  }
+    }
+  );
 } 

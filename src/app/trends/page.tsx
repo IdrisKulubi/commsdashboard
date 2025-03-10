@@ -2,81 +2,101 @@ import { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { TrendsClient } from "@/components/trends/trends-client";
-import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics } from "@/lib/api";
+import { getSocialMetrics } from "@/lib/api";
 import { PLATFORMS, BUSINESS_UNITS } from "@/db/schema";
+import { COUNTRIES } from "@/lib/constants";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Trends",
-  description: "Long-term trends in your communications metrics",
+  description: "Analyze trends in your communications metrics",
 };
 
+// Add a direct database query function as backup
+import db from "@/db/drizzle";
+import { socialMetrics } from "@/db/schema";
+import { and, between, eq } from "drizzle-orm";
+
+async function getMetricsDirectly(
+  platform: string,
+  businessUnit: string,
+  startDate: Date,
+  endDate: Date
+) {
+  try {
+    return await db.query.socialMetrics.findMany({
+      where: and(
+        eq(socialMetrics.platform, platform as "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK" | "WEBSITE" | "NEWSLETTER"),
+        eq(socialMetrics.businessUnit, businessUnit as "ASM" | "IACL" | "EM"),
+        between(socialMetrics.date, startDate, endDate)
+      ),
+      orderBy: [socialMetrics.date],
+    });
+  } catch (error) {
+    console.error("Error fetching directly from DB:", error);
+    return [];
+  }
+}
+
 export default async function TrendsPage() {
-  // Get data for the last 12 months
+  // Default to last 12 months of data
   const endDate = new Date();
   const startDate = new Date();
-  startDate.setFullYear(startDate.getFullYear() - 1);
+  startDate.setMonth(startDate.getMonth() - 12);
   
-  // Get data for all platforms and business units
-  const platforms = Object.values(PLATFORMS).filter(p => 
-    p !== "WEBSITE" && p !== "NEWSLETTER"
-  ) as ("FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK")[];
+  // Default platform and business unit
+  const defaultPlatform = "FACEBOOK";
+  const defaultBusinessUnit = "ASM";
   
-  const businessUnits = Object.values(BUSINESS_UNITS) as ("ASM" | "IACL" | "EM")[];
-  
-  // Fetch data for all combinations
-  const socialMetricsPromises = [];
-  const websiteMetricsPromises = [];
-  const newsletterMetricsPromises = [];
-  
-  // Get social metrics for all platforms and business units
-  for (const platform of platforms) {
-    for (const businessUnit of businessUnits) {
-      socialMetricsPromises.push(
-        getSocialMetrics(platform, businessUnit, startDate, endDate)
+  // Try to fetch data using the API first
+  let initialData = [];
+  try {
+    initialData = await getSocialMetrics(
+      defaultPlatform, 
+      defaultBusinessUnit, 
+      startDate, 
+      endDate
+    );
+    
+    // If API call returned empty but didn't throw, try direct DB access
+    if (initialData.length === 0) {
+      console.log("API returned empty data, trying direct DB access");
+      initialData = await getMetricsDirectly(
+        defaultPlatform,
+        defaultBusinessUnit,
+        startDate,
+        endDate
       );
     }
-  }
-  
-  // Get website metrics for all business units
-  for (const businessUnit of businessUnits) {
-    websiteMetricsPromises.push(
-      getWebsiteMetrics(businessUnit, startDate, endDate)
+  } catch (error) {
+    console.error("Error fetching initial data for trends:", error);
+    // Try direct DB access as fallback
+    initialData = await getMetricsDirectly(
+      defaultPlatform,
+      defaultBusinessUnit,
+      startDate,
+      endDate
     );
   }
-  
-  // Get newsletter metrics for all business units
-  for (const businessUnit of businessUnits) {
-    newsletterMetricsPromises.push(
-      getNewsletterMetrics(businessUnit, startDate, endDate)
-    );
-  }
-  
-  // Wait for all promises to resolve
-  const [socialMetricsResults, websiteMetricsResults, newsletterMetricsResults] = await Promise.all([
-    Promise.all(socialMetricsPromises),
-    Promise.all(websiteMetricsPromises),
-    Promise.all(newsletterMetricsPromises),
-  ]);
-  
-  // Flatten the arrays
-  const socialMetrics = socialMetricsResults.flat();
-  const websiteMetrics = websiteMetricsResults.flat();
-  const newsletterMetrics = newsletterMetricsResults.flat();
   
   return (
     <DashboardShell>
       <DashboardHeader
-        heading="Trends"
-        description="Long-term trends in your communications metrics across all platforms."
+        heading="Trends Analysis"
+        description="Analyze growth trends and patterns across platforms and business units."
       />
       
-      <TrendsClient 
-        socialMetrics={socialMetrics}
-        websiteMetrics={websiteMetrics}
-        newsletterMetrics={newsletterMetrics}
-        platforms={platforms}
-        businessUnits={businessUnits}
-      />
+      <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>
+        <TrendsClient 
+          platforms={Object.values(PLATFORMS).filter(p => 
+            p !== "WEBSITE" && p !== "NEWSLETTER"
+          )}
+          businessUnits={Object.values(BUSINESS_UNITS)}
+          countries={Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))}
+          initialData={initialData}
+        />
+      </Suspense>
     </DashboardShell>
   );
 } 
