@@ -6,7 +6,7 @@ A dashboard for tracking and analyzing communications metrics across different p
 
 ### Metrics Fetching Improvements
 
-We've made significant improvements to how metrics are fetched throughout the application:
+I've made significant improvements to how metrics are fetched throughout the application:
 
 1. **Server Actions Instead of API Routes**
    - Replaced all API route calls with direct server actions

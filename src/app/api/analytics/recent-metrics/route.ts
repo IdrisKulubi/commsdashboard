@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/db/drizzle";
 import { socialMetrics, websiteMetrics, newsletterMetrics } from "@/db/schema";
-import { and, between, desc, eq } from "drizzle-orm";
+import {  between, desc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {

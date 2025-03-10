@@ -19,10 +19,10 @@ import { COUNTRIES } from "@/lib/constants";
 
 interface AnalyticsClientProps {
   initialData: {
-    socialMetrics: any[];
-    websiteMetrics: any[];
-    newsletterMetrics: any[];
-    socialEngagementMetrics: any[];
+    socialMetrics: SocialMetric[];
+    websiteMetrics: WebsiteMetric[];
+    newsletterMetrics: NewsletterMetric[];
+    socialEngagementMetrics: SocialEngagementMetric[];
   };
   platforms?: string[];
   businessUnits?: string[];

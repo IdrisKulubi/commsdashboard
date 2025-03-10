@@ -425,10 +425,11 @@ export async function getNewsletterMetrics(
  * Get social engagement metrics for a specific platform, business unit, and date range
  */
 export async function getSocialEngagementMetrics(
-  platform: string,
+  platform: "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK",
   businessUnit: string,
   startDate: Date,
   endDate: Date,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   country: string = "GLOBAL" // Note: This parameter is kept for API consistency but not used since the table doesn't have a country field
 ): Promise<SocialEngagementMetric[]> {
   try {
@@ -436,7 +437,7 @@ export async function getSocialEngagementMetrics(
     
     // Build the query conditions
     const conditions = [
-      eq(socialEngagementMetrics.platform, platform as keyof typeof PLATFORMS),
+      eq(socialEngagementMetrics.platform, platform),
       eq(socialEngagementMetrics.businessUnit, businessUnit as keyof typeof BUSINESS_UNITS),
       between(socialEngagementMetrics.date, startDate, endDate)
     ];
