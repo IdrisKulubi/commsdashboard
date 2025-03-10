@@ -17,7 +17,7 @@ import { ComparisonChart } from "@/components/shared/ComparisonChart";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
 import { EditMetricDialog } from "@/components/shared/EditMetricDialog";
-import { updateMetric } from "@/actions/metrics";
+import { updateMetric } from "@/lib/actions/metrics";
 import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics } from "@/lib/api";
 import { MetricsCard } from "@/components/shared/MetricsCard";
 import { DateRange } from "react-day-picker";

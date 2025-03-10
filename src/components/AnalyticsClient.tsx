@@ -6,7 +6,7 @@ import {  AccessorColumnDef, ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { updateMetric } from "@/actions/metrics";
+import { updateMetric } from "@/lib/actions/metrics";
 import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics } from "@/lib/api";
 
 interface AnalyticsClientProps {
