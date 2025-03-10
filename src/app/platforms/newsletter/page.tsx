@@ -7,7 +7,6 @@ import { Mail } from "lucide-react";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NewsletterClient } from "@/components/platforms/newsletter-client";
-// Import server actions instead of API functions
 import { getNewsletterMetrics } from "@/lib/actions/metrics";
 
 export const metadata: Metadata = {
@@ -21,14 +20,11 @@ export default async function NewsletterPage() {
   const startDate = new Date();
   startDate.setMonth(startDate.getMonth() - 6);
   
-  // Get data for all business units
   const businessUnits = Object.values(BUSINESS_UNITS);
   
-  // Fetch newsletter metrics for all business units with error handling
   let newsletterMetrics: NewsletterMetric[] = [];
   
   try {
-    // Use Promise.all to fetch data for all business units in parallel
     const newsletterMetricsPromises = businessUnits.map(bu => 
       getNewsletterMetrics(bu, startDate, endDate)
     );

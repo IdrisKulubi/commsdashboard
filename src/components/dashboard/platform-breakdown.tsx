@@ -11,7 +11,7 @@ import {
   Legend,
   Tooltip,
 } from "recharts";
-import { Facebook, Instagram, Linkedin} from "lucide-react";
+import { FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { FaTiktok } from "react-icons/fa6";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -68,11 +68,11 @@ export function PlatformBreakdown({ className }: PlatformBreakdownProps) {
   const renderPlatformIcon = (platform: string) => {
     switch (platform) {
       case "Facebook":
-        return <Facebook className="h-4 w-4 text-[#1877F2]" />;
+        return <FaFacebook className="h-4 w-4 text-[#1877F2]" />;
       case "Instagram":
-        return <Instagram className="h-4 w-4 text-[#E4405F]" />;
+        return <FaInstagram className="h-4 w-4 text-[#E4405F]" />;
       case "LinkedIn":
-        return <Linkedin className="h-4 w-4 text-[#0A66C2]" />;
+        return <FaLinkedin className="h-4 w-4 text-[#0A66C2]" />;
       case "TikTok":
         return <FaTiktok className="h-4 w-4" />;
       default:

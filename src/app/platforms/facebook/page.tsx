@@ -2,13 +2,12 @@ import { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { PlatformClient } from "@/components/platforms/platform-client";
-import { BUSINESS_UNITS } from "@/db/schema";
+import { BUSINESS_UNITS, SocialMetric, SocialEngagementMetric } from "@/db/schema";
 import { COUNTRIES } from "@/lib/constants";
-import { Facebook } from "lucide-react";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-// Import server actions
 import { getSocialMetrics, getSocialEngagementMetrics } from "@/lib/actions/metrics";
+import { FaFacebook } from "react-icons/fa";
 
 export const metadata: Metadata = {
   title: "Facebook Analytics",
@@ -28,8 +27,8 @@ export default async function FacebookPage() {
   const businessUnits = Object.values(BUSINESS_UNITS);
   
   // Fetch social metrics for all business units with error handling
-  let socialMetrics = [];
-  let engagementMetrics = [];
+  let socialMetrics: SocialMetric[] = [];
+  let engagementMetrics: SocialEngagementMetric[] = [];
   
   try {
     // Use Promise.all to fetch data for all business units in parallel
@@ -63,11 +62,12 @@ export default async function FacebookPage() {
         heading="Facebook Analytics"
         description="Detailed analytics for Facebook platform"
       >
-        <Facebook className="h-6 w-6 text-[#1877F2]" />
+        <FaFacebook className="h-6 w-6 text-[#1877F2]" />
       </DashboardHeader>
       
       <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>
         <PlatformClient
+          platformColor="#1877F2" 
           platform={platform}
           initialData={{
             socialMetrics,

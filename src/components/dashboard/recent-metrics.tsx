@@ -8,8 +8,10 @@ import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Facebook, Instagram, Linkedin, MessageSquare, Globe, Mail } from "lucide-react";
+import { MessageSquare, Globe, Mail, Loader2 } from "lucide-react";
 import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics } from "@/lib/actions/metrics";
+import { Button } from "@/components/ui/button";
+import { FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 
 // Define the columns for the social metrics table
 const socialMetricsColumns: ColumnDef<SocialMetric>[] = [
@@ -25,9 +27,9 @@ const socialMetricsColumns: ColumnDef<SocialMetric>[] = [
       const platform = row.original.platform;
       return (
         <div className="flex items-center gap-2">
-          {platform === "FACEBOOK" && <Facebook className="h-4 w-4 text-[#1877F2]" />}
-          {platform === "INSTAGRAM" && <Instagram className="h-4 w-4 text-[#E4405F]" />}
-          {platform === "LINKEDIN" && <Linkedin className="h-4 w-4 text-[#0A66C2]" />}
+          {platform === "FACEBOOK" && <FaFacebook className="h-4 w-4 text-[#1877F2]" />}
+          {platform === "INSTAGRAM" && <FaInstagram className="h-4 w-4 text-[#E4405F]" />}
+          {platform === "LINKEDIN" && <FaLinkedin className="h-4 w-4 text-[#0A66C2]" />}
           {platform === "TIKTOK" && <MessageSquare className="h-4 w-4 text-black" />}
           <span>{platform}</span>
         </div>
@@ -120,87 +122,131 @@ export function RecentMetrics() {
   const [websiteMetrics, setWebsiteMetrics] = useState<WebsiteMetric[]>([]);
   const [newsletterMetrics, setNewsletterMetrics] = useState<NewsletterMetric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Get the date range for the last 30 days
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      
+      console.log("Fetching recent metrics from", startDate.toISOString(), "to", endDate.toISOString());
+      
+      // Use server actions instead of API routes
+      const socialPromises = [
+        // Facebook
+        getSocialMetrics("FACEBOOK", "ASM", startDate, endDate),
+        getSocialMetrics("FACEBOOK", "IACL", startDate, endDate),
+        getSocialMetrics("FACEBOOK", "EM", startDate, endDate),
+        // Instagram
+        getSocialMetrics("INSTAGRAM", "ASM", startDate, endDate),
+        getSocialMetrics("INSTAGRAM", "IACL", startDate, endDate),
+        getSocialMetrics("INSTAGRAM", "EM", startDate, endDate),
+        // LinkedIn
+        getSocialMetrics("LINKEDIN", "ASM", startDate, endDate),
+        getSocialMetrics("LINKEDIN", "IACL", startDate, endDate),
+        getSocialMetrics("LINKEDIN", "EM", startDate, endDate),
+        // TikTok
+        getSocialMetrics("TIKTOK", "ASM", startDate, endDate),
+        getSocialMetrics("TIKTOK", "IACL", startDate, endDate),
+        getSocialMetrics("TIKTOK", "EM", startDate, endDate),
+      ];
+      
+      const websitePromises = [
+        getWebsiteMetrics("ASM", startDate, endDate),
+        getWebsiteMetrics("IACL", startDate, endDate),
+        getWebsiteMetrics("EM", startDate, endDate),
+      ];
+      
+      const newsletterPromises = [
+        getNewsletterMetrics("ASM", startDate, endDate),
+        getNewsletterMetrics("IACL", startDate, endDate),
+        getNewsletterMetrics("EM", startDate, endDate),
+      ];
+      
+      // Execute all promises
+      const socialResults = await Promise.all(socialPromises);
+      const websiteResults = await Promise.all(websitePromises);
+      const newsletterResults = await Promise.all(newsletterPromises);
+      
+      // Flatten the arrays
+      const flatSocialMetrics = socialResults.flat();
+      const flatWebsiteMetrics = websiteResults.flat();
+      const flatNewsletterMetrics = newsletterResults.flat();
+      
+      console.log(`Fetched ${flatSocialMetrics.length} social metrics`);
+      console.log(`Fetched ${flatWebsiteMetrics.length} website metrics`);
+      console.log(`Fetched ${flatNewsletterMetrics.length} newsletter metrics`);
+      
+      // Sort by date (most recent first)
+      const sortedSocialMetrics = [...flatSocialMetrics].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ).slice(0, 50);
+      
+      const sortedWebsiteMetrics = [...flatWebsiteMetrics].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ).slice(0, 50);
+      
+      const sortedNewsletterMetrics = [...flatNewsletterMetrics].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ).slice(0, 50);
+      
+      // Update state
+      setSocialMetrics(sortedSocialMetrics);
+      setWebsiteMetrics(sortedWebsiteMetrics);
+      setNewsletterMetrics(sortedNewsletterMetrics);
+    } catch (err) {
+      console.error("Error fetching recent metrics:", err);
+      setError("Failed to fetch metrics data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchRecentMetrics() {
-      try {
-        setIsLoading(true);
-        
-        // Get the date range for the last 30 days
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
-        
-        // Use server actions instead of API routes
-        const [socialData, websiteData, newsletterData] = await Promise.all([
-          // Fetch social metrics for all platforms and business units
-          Promise.all([
-            getSocialMetrics("FACEBOOK", "ASM", startDate, endDate),
-            getSocialMetrics("FACEBOOK", "IACL", startDate, endDate),
-            getSocialMetrics("FACEBOOK", "EM", startDate, endDate),
-            getSocialMetrics("INSTAGRAM", "ASM", startDate, endDate),
-            getSocialMetrics("INSTAGRAM", "IACL", startDate, endDate),
-            getSocialMetrics("INSTAGRAM", "EM", startDate, endDate),
-            getSocialMetrics("LINKEDIN", "ASM", startDate, endDate),
-            getSocialMetrics("LINKEDIN", "IACL", startDate, endDate),
-            getSocialMetrics("LINKEDIN", "EM", startDate, endDate),
-            getSocialMetrics("TIKTOK", "ASM", startDate, endDate),
-            getSocialMetrics("TIKTOK", "IACL", startDate, endDate),
-            getSocialMetrics("TIKTOK", "EM", startDate, endDate),
-          ]).then(results => results.flat()),
-          
-          // Fetch website metrics for all business units
-          Promise.all([
-            getWebsiteMetrics("ASM", startDate, endDate),
-            getWebsiteMetrics("IACL", startDate, endDate),
-            getWebsiteMetrics("EM", startDate, endDate),
-          ]).then(results => results.flat()),
-          
-          // Fetch newsletter metrics for all business units
-          Promise.all([
-            getNewsletterMetrics("ASM", startDate, endDate),
-            getNewsletterMetrics("IACL", startDate, endDate),
-            getNewsletterMetrics("EM", startDate, endDate),
-          ]).then(results => results.flat()),
-        ]);
-        
-        // Sort by date (most recent first)
-        setSocialMetrics(socialData.sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        ).slice(0, 50));
-        
-        setWebsiteMetrics(websiteData.sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        ).slice(0, 50));
-        
-        setNewsletterMetrics(newsletterData.sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        ).slice(0, 50));
-        
-        console.log(`Fetched ${socialData.length} social metrics, ${websiteData.length} website metrics, and ${newsletterData.length} newsletter metrics`);
-      } catch (error) {
-        console.error("Error fetching recent metrics:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    fetchRecentMetrics();
+    fetchData();
   }, []);
 
   return (
     <Card className="col-span-3">
-      <CardHeader>
-        <CardTitle>Recent Metrics</CardTitle>
-        <CardDescription>
-          Latest metrics from the past 30 days
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Recent Metrics</CardTitle>
+          <CardDescription>
+            Latest metrics from the past 30 days
+          </CardDescription>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={fetchData} 
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading...
+            </>
+          ) : (
+            "Refresh"
+          )}
+        </Button>
       </CardHeader>
       <CardContent>
+        {error && (
+          <div className="bg-destructive/10 p-4 rounded-md mb-4">
+            <p className="text-destructive">{error}</p>
+          </div>
+        )}
+        
         <Tabs defaultValue="social">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="social" className="flex items-center gap-2">
-              <Facebook className="h-4 w-4" />
+              <FaFacebook className="h-4 w-4" />
               Social
             </TabsTrigger>
             <TabsTrigger value="website" className="flex items-center gap-2">
@@ -216,6 +262,7 @@ export function RecentMetrics() {
           <TabsContent value="social" className="mt-4">
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
                 <p className="text-muted-foreground">Loading social metrics...</p>
               </div>
             ) : socialMetrics.length > 0 ? (
@@ -233,6 +280,7 @@ export function RecentMetrics() {
           <TabsContent value="website" className="mt-4">
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
                 <p className="text-muted-foreground">Loading website metrics...</p>
               </div>
             ) : websiteMetrics.length > 0 ? (
@@ -250,6 +298,7 @@ export function RecentMetrics() {
           <TabsContent value="newsletter" className="mt-4">
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
                 <p className="text-muted-foreground">Loading newsletter metrics...</p>
               </div>
             ) : newsletterMetrics.length > 0 ? (
@@ -267,4 +316,4 @@ export function RecentMetrics() {
       </CardContent>
     </Card>
   );
-}
+} 
