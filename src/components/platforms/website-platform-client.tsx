@@ -24,6 +24,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { DataTableRowActions } from "@/components/ui/data-table-row-actions";
+import { EditMetricDialog } from "@/components/ui/edit-metric-dialog";
 
 interface WebsitePlatformClientProps {
   initialData: {
@@ -49,6 +51,9 @@ export function WebsitePlatformClient({
   });
   const [businessUnit, setBusinessUnit] = useState(businessUnits[0]);
   const [country, setCountry] = useState("GLOBAL");
+  
+  // Edit state
+  const [editingMetric, setEditingMetric] = useState<WebsiteMetric | null>(null);
   
   // Handle filter changes
   const handleFilterChange = async () => {
@@ -131,8 +136,8 @@ export function WebsitePlatformClient({
     { name: "Sessions", value: totalSessions, color: "#ffc658" },
   ];
   
-  // Define table columns
-  const websiteColumns: ColumnDef<WebsiteMetric>[] = [
+  // Define columns for the data table
+  const websiteMetricsColumns: ColumnDef<WebsiteMetric>[] = [
     {
       accessorKey: "date",
       header: "Date",
@@ -159,7 +164,19 @@ export function WebsitePlatformClient({
     {
       accessorKey: "sessions",
       header: "Sessions",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.sessions || 0),
+      cell: ({ row }) => row.original.sessions?.toLocaleString() || "0",
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="website"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+          }}
+        />
+      ),
     },
   ];
   
@@ -340,11 +357,21 @@ export function WebsitePlatformClient({
         </CardHeader>
         <CardContent>
           <DataTable 
-            columns={websiteColumns} 
+            columns={websiteMetricsColumns} 
             data={data.websiteMetrics} 
           />
         </CardContent>
       </Card>
+      
+      {/* Edit Dialog */}
+      {editingMetric && (
+        <EditMetricDialog
+          isOpen={Boolean(editingMetric)}
+          onClose={() => setEditingMetric(null)}
+          metric={editingMetric}
+          metricType="website"
+        />
+      )}
     </div>
   );
 } 

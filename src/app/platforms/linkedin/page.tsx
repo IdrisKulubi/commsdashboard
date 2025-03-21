@@ -4,7 +4,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { PlatformClient } from "@/components/platforms/platform-client";
 import { BUSINESS_UNITS, SocialMetric, SocialEngagementMetric } from "@/db/schema";
 import { COUNTRIES } from "@/lib/constants";
-import { Linkedin } from "lucide-react";
+import { FaLinkedin } from "react-icons/fa";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 // Import server actions instead of API functions
@@ -63,7 +63,7 @@ export default async function LinkedInPage() {
         heading="LinkedIn Analytics"
         description="Detailed analytics for LinkedIn platform"
       >
-        <Linkedin className="h-6 w-6 text-[#0A66C2]" />
+          <FaLinkedin className="h-6 w-6 text-[#0A66C2]" />
       </DashboardHeader>
       
       <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>

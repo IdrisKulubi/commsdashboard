@@ -28,6 +28,8 @@ import {
  
 } from "recharts";
 import { BUSINESS_UNITS } from "@/lib/constants";
+import { DataTableRowActions } from "@/components/ui/data-table-row-actions";
+import { EditMetricDialog } from "@/components/ui/edit-metric-dialog";
 
 interface PlatformClientProps {
   platform: string;
@@ -58,6 +60,10 @@ export function PlatformClient({
   });
   const [selectedBusinessUnit, setSelectedBusinessUnit] = useState<string>("ASM");
   const [selectedCountry, setSelectedCountry] = useState<string>("GLOBAL");
+  
+  // Edit states
+  const [editingMetric, setEditingMetric] = useState<any>(null);
+  const [editingMetricType, setEditingMetricType] = useState<'social' | 'engagement' | null>(null);
   
   // Handle filter changes
   const handleFilterChange = async () => {
@@ -193,6 +199,19 @@ export function PlatformClient({
       header: "Posts",
       cell: ({ row }) => row.original.numberOfPosts?.toLocaleString() || "0",
     },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="social"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+            setEditingMetricType('social');
+          }}
+        />
+      ),
+    },
   ];
   
   const engagementMetricsColumns: ColumnDef<SocialEngagementMetric>[] = [
@@ -224,6 +243,19 @@ export function PlatformClient({
       accessorKey: "engagementRate",
       header: "Engagement Rate",
       cell: ({ row }) => `${row.original.engagementRate || "0"}%`,
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="engagement"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+            setEditingMetricType('engagement');
+          }}
+        />
+      ),
     },
   ];
   
@@ -447,6 +479,19 @@ export function PlatformClient({
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Edit Dialog */}
+      {editingMetric && editingMetricType && (
+        <EditMetricDialog
+          isOpen={Boolean(editingMetric)}
+          onClose={() => {
+            setEditingMetric(null);
+            setEditingMetricType(null);
+          }}
+          metric={editingMetric}
+          metricType={editingMetricType}
+        />
+      )}
     </div>
   );
 } 

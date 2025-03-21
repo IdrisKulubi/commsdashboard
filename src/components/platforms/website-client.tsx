@@ -21,6 +21,8 @@ import { format } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Loader2 } from "lucide-react";
+import { DataTableRowActions } from "@/components/ui/data-table-row-actions";
+import { EditMetricDialog } from "@/components/ui/edit-metric-dialog";
 
 // Chart data type
 interface ChartDataItem {
@@ -46,9 +48,9 @@ export function WebsiteClient({
 }: WebsiteClientProps) {
   const [selectedBusinessUnit, setSelectedBusinessUnit] = useState<string>("ASM");
   const [selectedCountry, setSelectedCountry] = useState<string>("GLOBAL");
-  // We're keeping isLoading state for future use, but marking it as unused for now
   const [isLoading] = useState(false);
   const [data] = useState<WebsiteMetric[]>(initialData);
+  const [editingMetric, setEditingMetric] = useState<WebsiteMetric | null>(null);
 
   // Filter data based on selected business unit and country
   const filteredData = data.filter((metric) => {
@@ -189,6 +191,18 @@ export function WebsiteClient({
         // This property doesn't exist in the schema
         return "0m 0s";
       },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="website"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+          }}
+        />
+      ),
     },
   ];
 
@@ -445,6 +459,15 @@ export function WebsiteClient({
             </TabsContent>
           </Tabs>
         </>
+      )}
+      
+      {editingMetric && (
+        <EditMetricDialog
+          isOpen={Boolean(editingMetric)}
+          onClose={() => setEditingMetric(null)}
+          metric={editingMetric}
+          metricType="website"
+        />
       )}
     </div>
   );

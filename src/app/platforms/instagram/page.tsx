@@ -4,7 +4,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { PlatformClient } from "@/components/platforms/platform-client";
 import { BUSINESS_UNITS, SocialMetric, SocialEngagementMetric } from "@/db/schema";
 import { COUNTRIES } from "@/lib/constants";
-import { Instagram } from "lucide-react";
+import { FaInstagram } from "react-icons/fa";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 // Import server actions instead of API functions
@@ -63,7 +63,7 @@ export default async function InstagramPage() {
         heading="Instagram Analytics"
         description="Detailed analytics for Instagram platform"
       >
-        <Instagram className="h-6 w-6 text-[#E4405F]" />
+        <FaInstagram className="h-6 w-6 text-[#E4405F]" />
       </DashboardHeader>
       
       <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>

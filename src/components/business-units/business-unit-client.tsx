@@ -30,6 +30,8 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { DataTableRowActions } from "@/components/ui/data-table-row-actions";
+import { EditMetricDialog } from "@/components/ui/edit-metric-dialog";
 
 interface BusinessUnitClientProps {
   businessUnit: string;
@@ -60,6 +62,10 @@ export function BusinessUnitClient({
   });
   const [platform, setPlatform] = useState(platforms[0]);
   const [country, setCountry] = useState("GLOBAL");
+  
+  // Edit states
+  const [editingMetric, setEditingMetric] = useState<any>(null);
+  const [editingMetricType, setEditingMetricType] = useState<'social' | 'website' | 'newsletter' | 'engagement' | null>(null);
   
   // Handle filter changes
   const handleFilterChange = async () => {
@@ -222,12 +228,25 @@ export function BusinessUnitClient({
     {
       accessorKey: "impressions",
       header: "Impressions",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.impressions || 0),
+      cell: ({ row }) => row.original.impressions?.toLocaleString() || "0",
     },
     {
       accessorKey: "numberOfPosts",
       header: "Posts",
       cell: ({ row }) => new Intl.NumberFormat().format(row.original.numberOfPosts || 0),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="social"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+            setEditingMetricType('social');
+          }}
+        />
+      ),
     },
   ];
   
@@ -254,7 +273,20 @@ export function BusinessUnitClient({
     {
       accessorKey: "sessions",
       header: "Sessions",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.sessions || 0),
+      cell: ({ row }) => row.original.sessions?.toLocaleString() || "0",
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="website"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+            setEditingMetricType('website');
+          }}
+        />
+      ),
     },
   ];
   
@@ -276,12 +308,25 @@ export function BusinessUnitClient({
     {
       accessorKey: "openRate",
       header: "Open Rate",
-      cell: ({ row }) => `${((Number(row.original.openRate) || 0) * 100).toFixed(1)}%`,
+      cell: ({ row }) => `${(row.original.openRate * 100).toFixed(2)}%`,
     },
     {
       accessorKey: "numberOfEmails",
       header: "Emails Sent",
       cell: ({ row }) => new Intl.NumberFormat().format(row.original.numberOfEmails || 0),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="newsletter"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+            setEditingMetricType('newsletter');
+          }}
+        />
+      ),
     },
   ];
   
@@ -313,7 +358,20 @@ export function BusinessUnitClient({
     {
       accessorKey: "engagementRate",
       header: "Engagement Rate",
-      cell: ({ row }) => `${((Number(row.original.engagementRate) || 0) * 100).toFixed(1)}%`,
+      cell: ({ row }) => `${row.original.engagementRate?.toFixed(2)}%`,
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="engagement"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+            setEditingMetricType('engagement');
+          }}
+        />
+      ),
     },
   ];
   
@@ -656,6 +714,19 @@ export function BusinessUnitClient({
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Edit Dialog */}
+      {editingMetric && editingMetricType && (
+        <EditMetricDialog
+          isOpen={Boolean(editingMetric)}
+          onClose={() => {
+            setEditingMetric(null);
+            setEditingMetricType(null);
+          }}
+          metric={editingMetric}
+          metricType={editingMetricType}
+        />
+      )}
     </div>
   );
 } 

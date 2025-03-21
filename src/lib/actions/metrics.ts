@@ -305,6 +305,60 @@ export async function updateMetric(metric: SocialMetricType | WebsiteMetric | Ne
   }
 }
 
+export async function deleteMetric(id: number, type: 'social' | 'website' | 'newsletter' | 'engagement') {
+  try {
+    console.log(`Deleting ${type} metric with ID: ${id}`);
+    
+    // Validate that the ID is present
+    if (!id) {
+      console.error("Invalid delete request: Missing ID");
+      throw new Error("Invalid delete request: Missing ID");
+    }
+    
+    let result;
+    
+    // Determine which type of metric to delete
+    switch (type) {
+      case 'social':
+        result = await db
+          .delete(socialMetrics)
+          .where(eq(socialMetrics.id, Number(id)))
+          .returning();
+        break;
+        
+      case 'website':
+        result = await db
+          .delete(websiteMetrics)
+          .where(eq(websiteMetrics.id, Number(id)))
+          .returning();
+        break;
+        
+      case 'newsletter':
+        result = await db
+          .delete(newsletterMetrics)
+          .where(eq(newsletterMetrics.id, Number(id)))
+          .returning();
+        break;
+        
+      case 'engagement':
+        result = await db
+          .delete(socialEngagementMetrics)
+          .where(eq(socialEngagementMetrics.id, Number(id)))
+          .returning();
+        break;
+        
+      default:
+        throw new Error(`Unknown metric type: ${type}`);
+    }
+    
+    console.log(`Deleted ${type} metric:`, result);
+    return result;
+  } catch (error) {
+    console.error(`Failed to delete ${type} metric:`, error);
+    throw new Error(`Failed to delete ${type} metric: ${error}`);
+  }
+}
+
 /**
  * Get social metrics for a specific platform, business unit, and date range
  */

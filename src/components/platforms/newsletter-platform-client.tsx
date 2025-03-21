@@ -26,6 +26,8 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { DataTableRowActions } from "@/components/ui/data-table-row-actions";
+import { EditMetricDialog } from "@/components/ui/edit-metric-dialog";
 
 interface NewsletterPlatformClientProps {
   initialData: {
@@ -51,6 +53,7 @@ export function NewsletterPlatformClient({
   });
   const [businessUnit, setBusinessUnit] = useState(businessUnits[0]);
   const [country, setCountry] = useState("GLOBAL");
+  const [editingMetric, setEditingMetric] = useState<NewsletterMetric | null>(null);
   
   // Handle filter changes
   const handleFilterChange = async () => {
@@ -145,8 +148,8 @@ export function NewsletterPlatformClient({
   const emailsData = processMonthlyData(data.newsletterMetrics, "numberOfEmails");
   const openRateData = processOpenRateData(data.newsletterMetrics);
   
-  // Define table columns
-  const newsletterColumns: ColumnDef<NewsletterMetric>[] = [
+  // Define columns for the data table
+  const newsletterMetricsColumns: ColumnDef<NewsletterMetric>[] = [
     {
       accessorKey: "date",
       header: "Date",
@@ -173,7 +176,19 @@ export function NewsletterPlatformClient({
     {
       accessorKey: "numberOfEmails",
       header: "Emails Sent",
-      cell: ({ row }) => new Intl.NumberFormat().format(row.original.numberOfEmails || 0),
+      cell: ({ row }) => row.original.numberOfEmails?.toLocaleString() || "0",
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions 
+          row={row} 
+          metricType="newsletter"
+          onEdit={(row) => {
+            setEditingMetric(row.original);
+          }}
+        />
+      ),
     },
   ];
   
@@ -350,15 +365,27 @@ export function NewsletterPlatformClient({
       <Card>
         <CardHeader>
           <CardTitle>Newsletter Metrics</CardTitle>
-          <CardDescription>Detailed breakdown of newsletter performance</CardDescription>
+          <CardDescription>
+            Detailed breakdown of newsletter performance
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <DataTable 
-            columns={newsletterColumns} 
+            columns={newsletterMetricsColumns} 
             data={data.newsletterMetrics} 
           />
         </CardContent>
       </Card>
+      
+      {/* Edit Dialog */}
+      {editingMetric && (
+        <EditMetricDialog
+          isOpen={Boolean(editingMetric)}
+          onClose={() => setEditingMetric(null)}
+          metric={editingMetric}
+          metricType="newsletter"
+        />
+      )}
     </div>
   );
 } 
