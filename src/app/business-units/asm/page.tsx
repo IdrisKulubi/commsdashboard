@@ -63,7 +63,6 @@ export default async function ASMPage() {
     websiteMetrics = websiteMetricsResult;
     newsletterMetrics = newsletterMetricsResult;
     
-    console.log(`Fetched ${socialMetrics.length} social metrics, ${engagementMetrics.length} engagement metrics, ${websiteMetrics.length} website metrics, and ${newsletterMetrics.length} newsletter metrics for ASM`);
   } catch (error) {
     console.error("Error fetching data for ASM business unit:", error);
     // Continue with empty data

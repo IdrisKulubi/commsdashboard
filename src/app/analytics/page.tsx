@@ -62,7 +62,6 @@ export default async function AnalyticsPage() {
       ),
     ]);
     
-    console.log(`Fetched initial data for analytics: ${socialMetrics.length} social metrics, ${websiteMetrics.length} website metrics, ${newsletterMetrics.length} newsletter metrics, ${socialEngagementMetrics.length} engagement metrics`);
   } catch (error) {
     console.error("Error fetching initial data for analytics:", error);
     // Continue with empty data

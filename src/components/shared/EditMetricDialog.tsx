@@ -21,7 +21,7 @@ interface EditMetricDialogProps {
   data: SocialMetric | WebsiteMetric | NewsletterMetric | null;
   currentFilters: {
     platform?: "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK" | "WEBSITE" | "NEWSLETTER";
-    businessUnit: "ASM" | "IACL" | "EM";
+    businessUnit: "ASM" | "IACL" | "EM" | "KCL" ;
 
 
   };

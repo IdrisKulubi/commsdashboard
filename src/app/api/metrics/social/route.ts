@@ -48,10 +48,7 @@ export async function GET(request: NextRequest) {
       .where(and(...conditions))
       .orderBy(socialMetrics.date);
 
-    // Add debug logging
-    console.log("Filtering by platform:", platform);
-    console.log("Query conditions:", conditions);
-    console.log("Returned metrics:", metrics.length);
+   
 
     return NextResponse.json(metrics);
   } catch (error) {

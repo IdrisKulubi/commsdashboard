@@ -63,7 +63,6 @@ export default async function KCLPage() {
     websiteMetrics = websiteMetricsResult;
     newsletterMetrics = newsletterMetricsResult;
     
-    console.log(`Fetched ${socialMetrics.length} social metrics, ${engagementMetrics.length} engagement metrics, ${websiteMetrics.length} website metrics, and ${newsletterMetrics.length} newsletter metrics for KCL`);
   } catch (error) {
     console.error("Error fetching data for KCL business unit:", error);
     // Continue with empty data

@@ -51,11 +51,7 @@ export function AnalyticsSection<T extends MetricData>({
     }
   };
 
-  // Debug logs
-  console.log('Column types:', columns.map(col => ({
-    id: col.id,
-    hasAccessorKey: 'accessorKey' in col,
-  })));
+ 
 
   const hasNumericData = data.some(item =>
     Object.values(item).some(value => typeof value === 'number')

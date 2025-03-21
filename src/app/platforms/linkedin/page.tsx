@@ -51,7 +51,6 @@ export default async function LinkedInPage() {
     socialMetrics = socialMetricsResults.flat();
     engagementMetrics = engagementMetricsResults.flat();
     
-    console.log(`Fetched ${socialMetrics.length} social metrics and ${engagementMetrics.length} engagement metrics`);
   } catch (error) {
     console.error("Error fetching data for LinkedIn platform:", error);
     // Continue with empty data

@@ -205,7 +205,6 @@ export function DashboardClient({
     const instagramMetrics = metrics.socialMetrics.filter(m => 
       m.platform === "INSTAGRAM" && m.businessUnit === filters.businessUnit
     );
-    console.log("Instagram metrics:", instagramMetrics);
     
     // Check exact string comparison
     if (filters.platform === "INSTAGRAM") {

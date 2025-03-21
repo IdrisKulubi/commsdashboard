@@ -50,7 +50,6 @@ export default async function FacebookPage() {
     socialMetrics = socialMetricsResults.flat();
     engagementMetrics = engagementMetricsResults.flat();
     
-    console.log(`Fetched ${socialMetrics.length} social metrics and ${engagementMetrics.length} engagement metrics for Facebook`);
   } catch (error) {
     console.error("Error fetching data for Facebook platform:", error);
     // Continue with empty data

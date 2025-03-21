@@ -23,7 +23,6 @@ export default async function DashboardPage() {
   
   try {
     totalMetrics = await getTotalMetrics();
-    console.log("Fetched total metrics for dashboard:", totalMetrics);
   } catch (error) {
     console.error("Error fetching total metrics for dashboard:", error);
     // Continue with default values

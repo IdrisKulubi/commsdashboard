@@ -15,7 +15,6 @@ export async function GET() {
     });
     
     if (!latestSocialMetric) {
-      console.log("No social metrics found");
       return NextResponse.json({
         totalFollowers: 250000,
         totalWebsiteUsers: 120000,
@@ -24,7 +23,6 @@ export async function GET() {
       });
     }
     
-    console.log("Latest social metric date:", latestSocialMetric.date);
     
     // Get all social metrics for the latest date
     const allSocialMetrics = await db.query.socialMetrics.findMany({
@@ -40,8 +38,7 @@ export async function GET() {
       totalPosts += metric.numberOfPosts || 0;
     }
     
-    console.log("Calculated followers:", totalFollowers);
-    console.log("Calculated posts:", totalPosts);
+   
     
     // Get the latest website metrics
     const latestWebsiteMetric = await db.query.websiteMetrics.findFirst({
@@ -61,7 +58,6 @@ export async function GET() {
       }
     }
     
-    console.log("Calculated website users:", totalWebsiteUsers);
     
     // Get the latest newsletter metrics
     const latestNewsletterMetric = await db.query.newsletterMetrics.findFirst({
@@ -81,7 +77,6 @@ export async function GET() {
       }
     }
     
-    console.log("Calculated newsletter recipients:", totalNewsletterRecipients);
     
     // If we still have no data, use fallback values
     if (totalFollowers === 0 && totalWebsiteUsers === 0 && 

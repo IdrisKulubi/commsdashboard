@@ -35,7 +35,6 @@ export default async function NewsletterPage() {
     // Flatten the arrays
     newsletterMetrics = newsletterMetricsResults.flat();
     
-    console.log(`Fetched ${newsletterMetrics.length} newsletter metrics`);
   } catch (error) {
     console.error("Error fetching data for Newsletter:", error);
     // Continue with empty data

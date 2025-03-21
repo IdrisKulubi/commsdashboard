@@ -63,7 +63,6 @@ export default async function EMPage() {
     websiteMetrics = websiteMetricsResult;
     newsletterMetrics = newsletterMetricsResult;
     
-    console.log(`Fetched ${socialMetrics.length} social metrics, ${engagementMetrics.length} engagement metrics, ${websiteMetrics.length} website metrics, and ${newsletterMetrics.length} newsletter metrics for EM`);
   } catch (error) {
     console.error("Error fetching data for EM business unit:", error);
     // Continue with empty data

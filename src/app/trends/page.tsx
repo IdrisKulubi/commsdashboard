@@ -46,7 +46,6 @@ export default async function TrendsPage() {
     // Flatten the results
     allMetrics = results.flat();
     
-    console.log(`Fetched ${allMetrics.length} metrics for trends analysis`);
   } catch (error) {
     console.error("Error fetching data for trends analysis:", error);
     // Continue with empty data
