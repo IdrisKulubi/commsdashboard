@@ -62,6 +62,7 @@ export function PlatformClient({
   const [selectedCountry, setSelectedCountry] = useState<string>("GLOBAL");
   
   // Edit states
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingMetric, setEditingMetric] = useState<any>(null);
   const [editingMetricType, setEditingMetricType] = useState<'social' | 'engagement' | null>(null);
   

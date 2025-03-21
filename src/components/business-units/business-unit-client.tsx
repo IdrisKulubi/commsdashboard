@@ -308,7 +308,7 @@ export function BusinessUnitClient({
     {
       accessorKey: "openRate",
       header: "Open Rate",
-      cell: ({ row }) => `${(row.original.openRate * 100).toFixed(2)}%`,
+      cell: ({ row }) => `${(Number(row.original.openRate || 0) * 100).toFixed(2)}%`,
     },
     {
       accessorKey: "numberOfEmails",
@@ -358,7 +358,7 @@ export function BusinessUnitClient({
     {
       accessorKey: "engagementRate",
       header: "Engagement Rate",
-      cell: ({ row }) => `${row.original.engagementRate?.toFixed(2)}%`,
+      cell: ({ row }) => `${Number(row.original.engagementRate || 0).toFixed(2)}%`,
     },
     {
       id: "actions",
