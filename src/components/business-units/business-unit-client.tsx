@@ -69,26 +69,48 @@ export function BusinessUnitClient({
   
   // Handle metric deletion
   const handleMetricDeleted = (id: number, type: 'social' | 'website' | 'newsletter' | 'engagement') => {
-    setData(prevData => {
-      const newData = { ...prevData };
-      
-      switch (type) {
-        case 'social':
-          newData.socialMetrics = newData.socialMetrics.filter(metric => metric.id !== id);
-          break;
-        case 'website':
-          newData.websiteMetrics = newData.websiteMetrics.filter(metric => metric.id !== id);
-          break;
-        case 'newsletter':
-          newData.newsletterMetrics = newData.newsletterMetrics.filter(metric => metric.id !== id);
-          break;
-        case 'engagement':
-          newData.engagementMetrics = newData.engagementMetrics.filter(metric => metric.id !== id);
-          break;
+    try {
+      if (!id) {
+        console.error("Cannot delete: Invalid ID provided");
+        return;
       }
       
-      return newData;
-    });
+      // Update the UI state to remove the deleted metric
+      setData(prevData => {
+        const newData = { ...prevData };
+        
+        switch (type) {
+          case 'social':
+            newData.socialMetrics = newData.socialMetrics.filter(metric => metric.id !== id);
+            break;
+          case 'website':
+            newData.websiteMetrics = newData.websiteMetrics.filter(metric => metric.id !== id);
+            break;
+          case 'newsletter':
+            newData.newsletterMetrics = newData.newsletterMetrics.filter(metric => metric.id !== id);
+            break;
+          case 'engagement':
+            newData.engagementMetrics = newData.engagementMetrics.filter(metric => metric.id !== id);
+            break;
+        }
+        
+        // Update chart data after removing the metric
+        return newData;
+      });
+      
+      // Recalculate the chart data
+      setTimeout(() => {
+        // This forces the charts to re-render with the updated data
+        setData(currentData => ({ ...currentData }));
+      }, 100);
+    } catch (error) {
+      console.error("Error updating state after deletion:", error);
+      toast({
+        title: "UI Update Error",
+        description: "The metric was deleted but the UI couldn't be updated. Please refresh the page.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Handle metric update

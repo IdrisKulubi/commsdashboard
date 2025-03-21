@@ -309,12 +309,14 @@ export async function deleteMetric(id: number, type: 'social' | 'website' | 'new
   try {
     console.log(`Deleting ${type} metric with ID: ${id}`);
     
-    // Validate that the ID is present
-    if (!id) {
-      console.error("Invalid delete request: Missing ID");
-      throw new Error("Invalid delete request: Missing ID");
+    // Validate that the ID is present and is a valid number
+    if (!id || isNaN(Number(id))) {
+      console.error(`Invalid delete request: ID is invalid or missing: ${id}`);
+      throw new Error(`Invalid delete request: ID is invalid or missing: ${id}`);
     }
     
+    // Convert ID to number to ensure consistency
+    const numericId = Number(id);
     let result;
     
     // Determine which type of metric to delete
@@ -322,28 +324,28 @@ export async function deleteMetric(id: number, type: 'social' | 'website' | 'new
       case 'social':
         result = await db
           .delete(socialMetrics)
-          .where(eq(socialMetrics.id, Number(id)))
+          .where(eq(socialMetrics.id, numericId))
           .returning();
         break;
         
       case 'website':
         result = await db
           .delete(websiteMetrics)
-          .where(eq(websiteMetrics.id, Number(id)))
+          .where(eq(websiteMetrics.id, numericId))
           .returning();
         break;
         
       case 'newsletter':
         result = await db
           .delete(newsletterMetrics)
-          .where(eq(newsletterMetrics.id, Number(id)))
+          .where(eq(newsletterMetrics.id, numericId))
           .returning();
         break;
         
       case 'engagement':
         result = await db
           .delete(socialEngagementMetrics)
-          .where(eq(socialEngagementMetrics.id, Number(id)))
+          .where(eq(socialEngagementMetrics.id, numericId))
           .returning();
         break;
         
@@ -351,12 +353,30 @@ export async function deleteMetric(id: number, type: 'social' | 'website' | 'new
         throw new Error(`Unknown metric type: ${type}`);
     }
     
-    console.log(`Deleted ${type} metric:`, result);
+    // Verify that rows were affected
+    if (!result || result.length === 0) {
+      console.error(`No rows deleted for ${type} metric with ID: ${numericId}`);
+      throw new Error(`No rows deleted for ${type} metric with ID: ${numericId}`);
+    }
+    
+    console.log(`Successfully deleted ${type} metric:`, result);
+    
+    // Revalidate all potential paths that might show this data
     revalidatePath('/');
-    return result;
+    revalidatePath('/dashboard');
+    revalidatePath('/analytics');
+    revalidatePath(`/business-units`);
+    
+    return {
+      success: true,
+      deletedRecord: result[0]
+    };
   } catch (error) {
     console.error(`Failed to delete ${type} metric:`, error);
-    throw new Error(`Failed to delete ${type} metric: ${error}`);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 }
 

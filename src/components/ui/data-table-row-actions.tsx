@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { AlertCircle, Edit, Trash } from "lucide-react"
-  import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { deleteMetric } from "@/lib/actions/metrics"
 
 interface DataTableRowActionsProps<TData> {
@@ -51,7 +51,11 @@ export function DataTableRowActions<TData>({
         throw new Error("Row has no ID")
       }
 
-      await deleteMetric(id, metricType)
+      const result = await deleteMetric(id, metricType)
+      
+      if (!result.success) {
+        throw new Error(result.error || "Failed to delete metric")
+      }
       
       setIsDeleteDialogOpen(false)
       toast({
@@ -70,7 +74,7 @@ export function DataTableRowActions<TData>({
       console.error("Error deleting metric:", error)
       toast({
         title: "Error",
-        description: "Failed to delete the metric. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to delete the metric. Please try again.",
         variant: "destructive",
       })
     } finally {
