@@ -67,6 +67,61 @@ export function BusinessUnitClient({
   const [editingMetric, setEditingMetric] = useState<any>(null);
   const [editingMetricType, setEditingMetricType] = useState<'social' | 'website' | 'newsletter' | 'engagement' | null>(null);
   
+  // Handle metric deletion
+  const handleMetricDeleted = (id: number, type: 'social' | 'website' | 'newsletter' | 'engagement') => {
+    setData(prevData => {
+      const newData = { ...prevData };
+      
+      switch (type) {
+        case 'social':
+          newData.socialMetrics = newData.socialMetrics.filter(metric => metric.id !== id);
+          break;
+        case 'website':
+          newData.websiteMetrics = newData.websiteMetrics.filter(metric => metric.id !== id);
+          break;
+        case 'newsletter':
+          newData.newsletterMetrics = newData.newsletterMetrics.filter(metric => metric.id !== id);
+          break;
+        case 'engagement':
+          newData.engagementMetrics = newData.engagementMetrics.filter(metric => metric.id !== id);
+          break;
+      }
+      
+      return newData;
+    });
+  };
+  
+  // Handle metric update
+  const handleMetricUpdated = (updatedMetric: any) => {
+    setData(prevData => {
+      const newData = { ...prevData };
+      
+      if ('platform' in updatedMetric && 'followers' in updatedMetric) {
+        // Social metric
+        newData.socialMetrics = newData.socialMetrics.map(metric => 
+          metric.id === updatedMetric.id ? updatedMetric : metric
+        );
+      } else if ('users' in updatedMetric) {
+        // Website metric
+        newData.websiteMetrics = newData.websiteMetrics.map(metric => 
+          metric.id === updatedMetric.id ? updatedMetric : metric
+        );
+      } else if ('recipients' in updatedMetric) {
+        // Newsletter metric
+        newData.newsletterMetrics = newData.newsletterMetrics.map(metric => 
+          metric.id === updatedMetric.id ? updatedMetric : metric
+        );
+      } else if ('likes' in updatedMetric || 'engagementRate' in updatedMetric) {
+        // Engagement metric
+        newData.engagementMetrics = newData.engagementMetrics.map(metric => 
+          metric.id === updatedMetric.id ? updatedMetric : metric
+        );
+      }
+      
+      return newData;
+    });
+  };
+  
   // Handle filter changes
   const handleFilterChange = async () => {
     if (!dateRange.from || !dateRange.to) {
@@ -245,6 +300,7 @@ export function BusinessUnitClient({
             setEditingMetric(row.original);
             setEditingMetricType('social');
           }}
+          onDelete={(id) => handleMetricDeleted(id, 'social')}
         />
       ),
     },
@@ -285,6 +341,7 @@ export function BusinessUnitClient({
             setEditingMetric(row.original);
             setEditingMetricType('website');
           }}
+          onDelete={(id) => handleMetricDeleted(id, 'website')}
         />
       ),
     },
@@ -325,6 +382,7 @@ export function BusinessUnitClient({
             setEditingMetric(row.original);
             setEditingMetricType('newsletter');
           }}
+          onDelete={(id) => handleMetricDeleted(id, 'newsletter')}
         />
       ),
     },
@@ -370,6 +428,7 @@ export function BusinessUnitClient({
             setEditingMetric(row.original);
             setEditingMetricType('engagement');
           }}
+          onDelete={(id) => handleMetricDeleted(id, 'engagement')}
         />
       ),
     },
@@ -725,6 +784,7 @@ export function BusinessUnitClient({
           }}
           metric={editingMetric}
           metricType={editingMetricType}
+          onUpdate={handleMetricUpdated}
         />
       )}
     </div>

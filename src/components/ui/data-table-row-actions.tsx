@@ -27,12 +27,14 @@ interface DataTableRowActionsProps<TData> {
   row: Row<TData>
   metricType: 'social' | 'website' | 'newsletter' | 'engagement'
   onEdit?: (row: Row<TData>) => void
+  onDelete?: (id: number) => void
 }
 
 export function DataTableRowActions<TData>({
   row,
   metricType,
   onEdit,
+  onDelete,
 }: DataTableRowActionsProps<TData>) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -57,8 +59,13 @@ export function DataTableRowActions<TData>({
         description: "The metric has been successfully deleted.",
       })
       
-      // Reload the page to refresh the data
-      window.location.reload()
+      // Update the parent component's state if onDelete is provided
+      if (onDelete) {
+        onDelete(id);
+      } else {
+        // Fallback to reload if no handler provided
+        window.location.reload();
+      }
     } catch (error) {
       console.error("Error deleting metric:", error)
       toast({

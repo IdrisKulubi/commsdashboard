@@ -352,6 +352,7 @@ export async function deleteMetric(id: number, type: 'social' | 'website' | 'new
     }
     
     console.log(`Deleted ${type} metric:`, result);
+    revalidatePath('/');
     return result;
   } catch (error) {
     console.error(`Failed to delete ${type} metric:`, error);

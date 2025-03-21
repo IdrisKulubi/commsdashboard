@@ -51,6 +51,7 @@ interface EditMetricDialogProps {
   onClose: () => void
   metric: any
   metricType: 'social' | 'website' | 'newsletter' | 'engagement'
+  onUpdate?: (updatedMetric: any) => void
 }
 
 export function EditMetricDialog({
@@ -58,6 +59,7 @@ export function EditMetricDialog({
   onClose,
   metric,
   metricType,
+  onUpdate,
 }: EditMetricDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
@@ -104,7 +106,7 @@ let schema: z.ZodSchema<any>
         formattedValues.openRate = formattedValues.openRate / 100
       }
       
-      await updateMetric(formattedValues)
+      const result = await updateMetric(formattedValues)
       
       toast({
         title: "Metric updated",
@@ -112,8 +114,14 @@ let schema: z.ZodSchema<any>
       })
       
       onClose()
-      // Reload the page to refresh the data
-      window.location.reload()
+      
+      // Use the onUpdate callback if provided, otherwise reload the page
+      if (onUpdate && result && !('error' in result)) {
+        onUpdate(result);
+      } else if (!onUpdate) {
+        // Fallback to reload if no handler provided
+        window.location.reload()
+      }
     } catch (error) {
       console.error("Error updating metric:", error)
       toast({
