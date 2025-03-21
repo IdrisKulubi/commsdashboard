@@ -1,4 +1,3 @@
-
 export const PLATFORMS = {
   FACEBOOK: "Facebook",
   INSTAGRAM: "Instagram",
@@ -9,6 +8,7 @@ export const BUSINESS_UNITS = {
   ASM: "ASM",
   ASM_PLUS: "ASM+",
   ASM_PRO: "ASM Pro",
+  KCL: "KCL",
 };
 export const COUNTRIES = {
   US: "United States",

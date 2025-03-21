@@ -23,6 +23,7 @@ export const BUSINESS_UNITS = {
   ASM: "ASM",
   IACL: "IACL",
   EM: "EM",
+  KCL: "KCL",
 } as const;
 
 
@@ -41,7 +42,7 @@ export const socialMetrics = pgTable("social_metrics", {
     ] as const,
   }).notNull(),
   businessUnit: text("business_unit", {
-    enum: ["ASM", "IACL", "EM"] as const,
+    enum: ["ASM", "IACL", "EM","KCL"] as const,
   }).notNull(),
   date: timestamp("date").notNull(),
   country: text("country").default("GLOBAL"), // Add country field with GLOBAL default
@@ -56,7 +57,7 @@ export const socialMetrics = pgTable("social_metrics", {
 export const websiteMetrics = pgTable("website_metrics", {
   id: serial("id").primaryKey(),
   businessUnit: text("business_unit", {
-    enum: ["ASM", "IACL", "EM"] as const,
+    enum: ["ASM", "IACL", "EM", "KCL"] as const,
   }).notNull(),
   date: timestamp("date").notNull(),
   country: text("country").default("GLOBAL"), // Add country field with GLOBAL default
@@ -71,7 +72,7 @@ export const websiteMetrics = pgTable("website_metrics", {
 export const newsletterMetrics = pgTable("newsletter_metrics", {
   id: serial("id").primaryKey(),
   businessUnit: text("business_unit", {
-    enum: ["ASM", "IACL", "EM"] as const,
+    enum: ["ASM", "IACL", "EM", "KCL"] as const,
   }).notNull(),
   date: timestamp("date").notNull(),
   country: text("country").default("GLOBAL"), // Add country field with GLOBAL default
@@ -89,7 +90,7 @@ export const socialEngagementMetrics = pgTable("social_engagement_metrics", {
     enum: ["FACEBOOK", "INSTAGRAM", "LINKEDIN", "TIKTOK"] as const,
   }).notNull(),
   businessUnit: text("business_unit", {
-    enum: ["ASM", "IACL", "EM"] as const,
+    enum: ["ASM", "IACL", "EM", "KCL"] as const,
   }).notNull(),
   date: timestamp("date").notNull(),
   likes: integer("likes").default(0),
