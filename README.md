@@ -21,7 +21,7 @@ I've made significant improvements to how metrics are fetched throughout the app
 3. **UI Improvements**
    - Added Suspense boundaries with Skeleton loaders for better loading states
    - Wrapped pages in DashboardShell for consistent layout
-   - Improved component structure for better maintainability
+   - Improved component structure for better maintainability and code to be neat and easy to navigate
 
 4. **Data Processing Optimizations**
    - Improved calculation of total metrics to avoid double-counting
