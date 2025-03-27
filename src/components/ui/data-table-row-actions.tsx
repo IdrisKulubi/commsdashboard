@@ -63,11 +63,9 @@ export function DataTableRowActions<TData>({
         description: "The metric has been successfully deleted.",
       })
       
-      // Update the parent component's state if onDelete is provided
       if (onDelete) {
         onDelete(id);
       } else {
-        // Fallback to reload if no handler provided
         window.location.reload();
       }
     } catch (error) {

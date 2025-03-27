@@ -5,6 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { MapPin } from "lucide-react";
+import Link from "next/link";
 
 interface CountryData {
   country: string;
@@ -77,10 +80,20 @@ export function CountryDistribution() {
   return (
     <Card className="transition-all hover:shadow-md">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl font-semibold">Country Distribution</CardTitle>
-        <CardDescription>
-          Audience distribution by country
-        </CardDescription>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-xl font-semibold">Country Distribution</CardTitle>
+            <CardDescription>
+              Audience distribution by country
+            </CardDescription>
+          </div>
+          <Link href="/analytics/country-heatmap">
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              View Heatmap
+            </Button>
+          </Link>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
