@@ -8,51 +8,38 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import Link from "next/link";
-
-interface CountryData {
-  country: string;
-  followers: number;
-  websiteUsers: number;
-  newsletterRecipients: number;
-}
+import { getCountryDistribution } from "@/app/actions/analytics";
+import type { CountryData } from "@/app/actions/analytics";
 
 export function CountryDistribution() {
   const [data, setData] = useState<CountryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchCountryDistribution() {
+    async function fetchData() {
       try {
-        const baseUrl = window.location.origin;
-        const response = await fetch(`${baseUrl}/api/analytics/country-distribution`);
+        setIsLoading(true);
+        setError(null);
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch country distribution data');
+        const countryData = await getCountryDistribution();
+        
+        if (!countryData || countryData.length === 0) {
+          setError("No data available");
+          setData([]);
+        } else {
+          setData(countryData);
         }
-        
-        const countryData = await response.json();
-        setData(countryData);
-      } catch (error) {
-        console.error('Error fetching country distribution:', error);
-        // Fallback data
-        setData([
-          { country: "Global", followers: 250000, websiteUsers: 120000, newsletterRecipients: 75000 },
-          { country: "United States", followers: 100000, websiteUsers: 50000, newsletterRecipients: 30000 },
-          { country: "United Kingdom", followers: 50000, websiteUsers: 25000, newsletterRecipients: 15000 },
-          { country: "Canada", followers: 30000, websiteUsers: 15000, newsletterRecipients: 10000 },
-          { country: "Australia", followers: 20000, websiteUsers: 10000, newsletterRecipients: 5000 },
-          { country: "Germany", followers: 15000, websiteUsers: 8000, newsletterRecipients: 4000 },
-          { country: "France", followers: 12000, websiteUsers: 6000, newsletterRecipients: 3000 },
-          { country: "Japan", followers: 10000, websiteUsers: 5000, newsletterRecipients: 2500 },
-          { country: "Brazil", followers: 8000, websiteUsers: 4000, newsletterRecipients: 2000 },
-          { country: "India", followers: 5000, websiteUsers: 2000, newsletterRecipients: 1000 }
-        ]);
+      } catch (err) {
+        console.error('Error fetching country distribution:', err);
+        setError("Error loading data");
+        setData([]);
       } finally {
         setIsLoading(false);
       }
     }
     
-    fetchCountryDistribution();
+    fetchData();
   }, []);
 
   const columns: ColumnDef<CountryData>[] = [
@@ -87,10 +74,10 @@ export function CountryDistribution() {
               Audience distribution by country
             </CardDescription>
           </div>
-          <Link href="/analytics/country-heatmap">
+          <Link href="/analytics/country-demographics">
             <Button variant="outline" size="sm" className="flex items-center gap-1">
               <MapPin className="h-4 w-4" />
-              View Heatmap
+              View Demographics
             </Button>
           </Link>
         </div>
@@ -102,6 +89,10 @@ export function CountryDistribution() {
             {[1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-10 w-full" />
             ))}
+          </div>
+        ) : error ? (
+          <div className="py-8 text-center text-muted-foreground">
+            {error}
           </div>
         ) : (
           <DataTable columns={columns} data={data} />

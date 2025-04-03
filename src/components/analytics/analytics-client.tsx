@@ -16,6 +16,7 @@ import { EngagementBreakdown } from "@/components/analytics/engagement-breakdown
 import { Loader2 } from "lucide-react";
 import { MetricsChart } from "./metrics-chart";
 import { COUNTRIES } from "@/lib/constants";
+import Link from "next/link";
 
 interface AnalyticsClientProps {
   initialData: {
@@ -50,7 +51,6 @@ export function AnalyticsClient({
   });
   const [platform, setPlatform] = useState("FACEBOOK");
   const [businessUnit, setBusinessUnit] = useState("ASM");
-  const [country, setCountry] = useState("GLOBAL");
   
   // Handle filter changes
   const handleFilterChange = async () => {
@@ -66,32 +66,35 @@ export function AnalyticsClient({
     setIsLoading(true);
     
     try {
+      // Always use "GLOBAL" for country since we removed the country selector
+      const countryValue = "GLOBAL";
+      
       const [socialData, websiteData, newsletterData, engagementData] = await Promise.all([
         getSocialMetrics(
           platform as SocialPlatformType, 
           businessUnit as BusinessUnitType, 
           dateRange.from, 
           dateRange.to,
-          country
+          countryValue
         ),
         getWebsiteMetrics(
           businessUnit as BusinessUnitType, 
           dateRange.from, 
           dateRange.to,
-          country
+          countryValue
         ),
         getNewsletterMetrics(
           businessUnit as BusinessUnitType, 
           dateRange.from, 
           dateRange.to,
-          country
+          countryValue
         ),
         getSocialEngagementMetrics(
           platform as SocialPlatformType, 
           businessUnit as BusinessUnitType, 
           dateRange.from, 
           dateRange.to,
-          country
+          countryValue
         ),
       ]);
       
@@ -312,23 +315,16 @@ export function AnalyticsClient({
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Country</label>
-              <Select 
-                value={country} 
-                onValueChange={setCountry}
+              <label className="text-sm font-medium">Country Analytics</label>
+              <Button
+                variant="outline"
+                className="w-full"
+                asChild
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="GLOBAL">Global</SelectItem>
-                  {countries.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Link href="/analytics/country-demographics">
+                  View Country Demographics
+                </Link>
+              </Button>
             </div>
           </div>
           
