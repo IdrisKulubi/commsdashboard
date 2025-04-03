@@ -120,7 +120,7 @@ export async function getCountryDistribution(): Promise<CountryData[]> {
       newsletterRecipients: Number(globalNewsletterResult[0]?.total || 0),
     });
     
-    return countryData;
+    return countryData as CountryData[] ;
   } catch (error) {
     console.error("Error fetching country distribution:", error);
     return [];

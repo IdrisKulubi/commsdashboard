@@ -87,6 +87,7 @@ export default function CountryDemographicsPage() {
                 key={option.value}
                 variant={metric === option.value ? "default" : "outline"}
                 size="sm"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onClick={() => setMetric(option.value as any)}
               >
                 {option.label}

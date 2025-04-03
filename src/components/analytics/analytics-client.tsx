@@ -38,6 +38,7 @@ export function AnalyticsClient({
   initialData, 
   platforms = Object.values(PLATFORMS).filter(p => p !== "WEBSITE" && p !== "NEWSLETTER"),
   businessUnits = Object.values(BUSINESS_UNITS),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   countries = Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))
 }: AnalyticsClientProps) {
   const { toast } = useToast();
