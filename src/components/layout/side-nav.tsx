@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   BarChart3, 
-  Home, 
   PlusCircle, 
   LineChart, 
   Facebook, 
@@ -63,12 +62,7 @@ export function SideNav() {
         </div>
         <ScrollArea className="flex-1 px-2 py-2 lg:px-4">
           <div className="space-y-2">
-            <NavItem
-              href="/"
-              icon={<Home className="h-4 w-4" />}
-              label="Overview"
-              isActive={pathname === "/"}
-            />
+        
             <NavItem
               href="/analytics"
               icon={<BarChart3 className="h-4 w-4" />}
