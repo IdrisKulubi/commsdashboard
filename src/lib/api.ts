@@ -145,18 +145,4 @@ export async function getSocialEngagementMetrics(
     {},
     [] // Fallback to empty array
   );
-}
-
-// Direct database access for server components
-export async function getTotalMetrics() {
-  return fetchWithFallback(
-    '/api/analytics/total-metrics',
-    {},
-    {
-      totalFollowers: 0,
-      totalWebsiteUsers: 0,
-      totalNewsletterRecipients: 0,
-      totalPosts: 0,
-    }
-  );
 } 
