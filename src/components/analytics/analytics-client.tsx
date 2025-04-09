@@ -3,20 +3,21 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { SocialMetric, WebsiteMetric, NewsletterMetric, SocialEngagementMetric, BUSINESS_UNITS, PLATFORMS } from "@/db/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { format, subDays, startOfYear } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics, getSocialEngagementMetrics } from "@/lib/api";
 import { EngagementBreakdown } from "@/components/analytics/engagement-breakdown";
-import { Loader2 } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon } from "lucide-react";
 import { MetricsChart } from "./metrics-chart";
-import { COUNTRIES } from "@/lib/constants";
-import Link from "next/link";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface AnalyticsClientProps {
   initialData: {
@@ -30,32 +31,82 @@ interface AnalyticsClientProps {
   countries?: { code: string; name: string }[];
 }
 
-// Define platform and business unit types using the imported constants
 type BusinessUnitType = keyof typeof BUSINESS_UNITS;
 type SocialPlatformType = "FACEBOOK" | "INSTAGRAM" | "LINKEDIN" | "TIKTOK";
+
+type PredefinedRange = '7d' | '30d' | '90d' | '6m' | 'ytd' | 'custom';
+
+const predefinedRanges: { label: string; value: PredefinedRange }[] = [
+  { label: "Last 7 days", value: "7d" },
+  { label: "Last 30 days", value: "30d" },
+  { label: "Last 90 days", value: "90d" },
+  { label: "Last 6 months", value: "6m" },
+  { label: "Year to date", value: "ytd" },
+  { label: "Custom Range", value: "custom" },
+];
+
+function calculateDateRange(rangeKey: PredefinedRange): DateRange | undefined {
+  const endDate = new Date();
+  switch (rangeKey) {
+    case '7d':
+      return { from: subDays(endDate, 6), to: endDate };
+    case '30d':
+      return { from: subDays(endDate, 29), to: endDate };
+    case '90d':
+      return { from: subDays(endDate, 89), to: endDate };
+    case '6m':
+      const sixMonthsAgo = new Date(endDate);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      return { from: sixMonthsAgo, to: endDate };
+    case 'ytd':
+      return { from: startOfYear(endDate), to: endDate };
+    default:
+      return undefined;
+  }
+}
 
 export function AnalyticsClient({ 
   initialData, 
   platforms = Object.values(PLATFORMS).filter(p => p !== "WEBSITE" && p !== "NEWSLETTER"),
   businessUnits = Object.values(BUSINESS_UNITS),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  countries = Object.entries(COUNTRIES).map(([code, name]) => ({ code, name }))
 }: AnalyticsClientProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState(initialData);
   
   // Filter states
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(new Date().setMonth(new Date().getMonth() - 6)),
-    to: new Date(),
-  });
+  const [activeRange, setActiveRange] = useState<PredefinedRange>('6m');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>(
+    calculateDateRange('6m')
+  );
   const [platform, setPlatform] = useState("FACEBOOK");
   const [businessUnit, setBusinessUnit] = useState("ASM");
   
-  // Handle filter changes
-  const handleFilterChange = async () => {
-    if (!dateRange.from || !dateRange.to) {
+  // Function to handle predefined range selection
+  const handlePredefinedRangeSelect = (rangeKey: PredefinedRange) => {
+    setActiveRange(rangeKey);
+    if (rangeKey !== 'custom') {
+      const newRange = calculateDateRange(rangeKey);
+      setCustomDateRange(newRange);
+      handleFilterChange(newRange); // Trigger data fetch with new range
+    }
+    // If 'custom', the DatePickerWithRange will handle setting customDateRange and triggering fetch
+  };
+
+  // Handle custom date range changes and trigger fetch
+  const handleCustomDateChange = (date: DateRange | undefined) => {
+    setCustomDateRange(date);
+    if (date?.from && date?.to) {
+      setActiveRange('custom'); // Set active range to custom
+      handleFilterChange(date);
+    }
+  };
+
+  // Handle filter changes (now accepts the date range directly)
+  const handleFilterChange = async (rangeToUse?: DateRange) => {
+    const currentRange = rangeToUse || customDateRange;
+    
+    if (!currentRange?.from || !currentRange?.to) {
       toast({
         title: "Date range required",
         description: "Please select a valid date range",
@@ -67,34 +118,33 @@ export function AnalyticsClient({
     setIsLoading(true);
     
     try {
-      // Always use "GLOBAL" for country since we removed the country selector
       const countryValue = "GLOBAL";
       
       const [socialData, websiteData, newsletterData, engagementData] = await Promise.all([
         getSocialMetrics(
           platform as SocialPlatformType, 
           businessUnit as BusinessUnitType, 
-          dateRange.from, 
-          dateRange.to,
+          currentRange.from, 
+          currentRange.to,
           countryValue
         ),
         getWebsiteMetrics(
           businessUnit as BusinessUnitType, 
-          dateRange.from, 
-          dateRange.to,
+          currentRange.from, 
+          currentRange.to,
           countryValue
         ),
         getNewsletterMetrics(
           businessUnit as BusinessUnitType, 
-          dateRange.from, 
-          dateRange.to,
+          currentRange.from, 
+          currentRange.to,
           countryValue
         ),
         getSocialEngagementMetrics(
           platform as SocialPlatformType, 
           businessUnit as BusinessUnitType, 
-          dateRange.from, 
-          dateRange.to,
+          currentRange.from, 
+          currentRange.to,
           countryValue
         ),
       ]);
@@ -138,10 +188,6 @@ export function AnalyticsClient({
       header: "Business Unit",
     },
     {
-      accessorKey: "country",
-      header: "Country",
-    },
-    {
       accessorKey: "followers",
       header: "Followers",
       cell: ({ row }) => new Intl.NumberFormat().format(row.original.followers || 0),
@@ -169,10 +215,6 @@ export function AnalyticsClient({
       header: "Business Unit",
     },
     {
-      accessorKey: "country",
-      header: "Country",
-    },
-    {
       accessorKey: "users",
       header: "Users",
       cell: ({ row }) => new Intl.NumberFormat().format(row.original.users || 0),
@@ -198,10 +240,6 @@ export function AnalyticsClient({
     {
       accessorKey: "businessUnit",
       header: "Business Unit",
-    },
-    {
-      accessorKey: "country",
-      header: "Country",
     },
     {
       accessorKey: "recipients",
@@ -264,19 +302,65 @@ export function AnalyticsClient({
           <CardDescription>Refine your analytics data</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 items-end">
+            {/* Date Range Selection */}
+            <div className="space-y-2 xl:col-span-2">
               <label className="text-sm font-medium">Date Range</label>
-              <DatePickerWithRange 
-                date={dateRange} 
-                setDate={(date) => {
-                  if (date?.from && date?.to) {
-                    setDateRange({ from: date.from, to: date.to });
-                  }
-                }} 
-              />
+              <div className="flex flex-wrap gap-2">
+                {predefinedRanges.map((range) => (
+                  <Button
+                    key={range.value}
+                    variant={activeRange === range.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePredefinedRangeSelect(range.value)}
+                    className="flex-grow sm:flex-grow-0"
+                  >
+                    {range.label}
+                  </Button>
+                ))}
+                {activeRange === 'custom' && (
+                   <Popover>
+                     <PopoverTrigger asChild>
+                       <Button
+                         id="date"
+                         variant={"outline"}
+                         size="sm"
+                         className={cn(
+                           "w-[240px] justify-start text-left font-normal",
+                           !customDateRange && "text-muted-foreground"
+                         )}
+                       >
+                         <CalendarIcon className="mr-2 h-4 w-4" />
+                         {customDateRange?.from ? (
+                           customDateRange.to ? (
+                             <>
+                               {format(customDateRange.from, "LLL dd, y")} -{" "}
+                               {format(customDateRange.to, "LLL dd, y")}
+                             </>
+                           ) : (
+                             format(customDateRange.from, "LLL dd, y")
+                           )
+                         ) : (
+                           <span>Pick a date range</span>
+                         )}
+                       </Button>
+                     </PopoverTrigger>
+                     <PopoverContent className="w-auto p-0" align="start">
+                       <Calendar
+                         initialFocus
+                         mode="range"
+                         defaultMonth={customDateRange?.from}
+                         selected={customDateRange}
+                         onSelect={handleCustomDateChange}
+                         numberOfMonths={2}
+                       />
+                     </PopoverContent>
+                   </Popover>
+                )}
+              </div>
             </div>
             
+            {/* Platform Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Platform</label>
               <Select 
@@ -296,6 +380,7 @@ export function AnalyticsClient({
               </Select>
             </div>
             
+            {/* Business Unit Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Business Unit</label>
               <Select 
@@ -315,34 +400,22 @@ export function AnalyticsClient({
               </Select>
             </div>
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Country Analytics</label>
-              <Button
-                variant="outline"
-                className="w-full"
-                asChild
-              >
-                <Link href="/analytics/country-demographics">
-                  View Country Demographics
-                </Link>
-              </Button>
-            </div>
+            {/* Apply Filters Button */}
+            <Button 
+              onClick={() => handleFilterChange()} // Manually trigger fetch when other filters change 
+              disabled={isLoading}
+              className="w-full lg:w-auto"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Apply Filters"
+              )}
+            </Button>
           </div>
-          
-          <Button 
-            onClick={handleFilterChange} 
-            className="mt-4"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              "Apply Filters"
-            )}
-          </Button>
         </CardContent>
       </Card>
       
