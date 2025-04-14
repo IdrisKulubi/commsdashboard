@@ -4,20 +4,18 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { SocialMetric, WebsiteMetric, NewsletterMetric, SocialEngagementMetric } from "@/db/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { format, subDays, startOfYear } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { getSocialMetrics, getWebsiteMetrics, getNewsletterMetrics, getSocialEngagementMetrics } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon } from "lucide-react";
 import {
   LineChart,
   Line,
- 
   XAxis,
   YAxis,
   CartesianGrid,
@@ -32,6 +30,42 @@ import {
 } from "recharts";
 import { DataTableRowActions } from "@/components/ui/data-table-row-actions";
 import { EditMetricDialog } from "@/components/ui/edit-metric-dialog";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+
+// Add the PredefinedRange type and function to calculate date range
+type PredefinedRange = '7d' | '30d' | '90d' | '6m' | 'ytd' | 'custom';
+
+const predefinedRanges: { label: string; value: PredefinedRange }[] = [
+  { label: "Last 7 days", value: "7d" },
+  { label: "Last 30 days", value: "30d" },
+  { label: "Last 90 days", value: "90d" },
+  { label: "Last 6 months", value: "6m" },
+  { label: "Year to date", value: "ytd" },
+  { label: "Custom Range", value: "custom" },
+];
+
+function calculateDateRange(rangeKey: PredefinedRange): DateRange | undefined {
+  const endDate = new Date();
+  switch (rangeKey) {
+    case '7d':
+      return { from: subDays(endDate, 6), to: endDate };
+    case '30d':
+      return { from: subDays(endDate, 29), to: endDate };
+    case '90d':
+      return { from: subDays(endDate, 89), to: endDate };
+    case '6m':
+      const sixMonthsAgo = new Date(endDate);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      return { from: sixMonthsAgo, to: endDate };
+    case 'ytd':
+      return { from: startOfYear(endDate), to: endDate };
+    default:
+      return undefined;
+  }
+}
 
 interface BusinessUnitClientProps {
   businessUnit: string;
@@ -55,17 +89,36 @@ export function BusinessUnitClient({
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState(initialData);
   
-  // Filter states
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(new Date().setMonth(new Date().getMonth() - 6)),
-    to: new Date(),
-  });
+  // Update filter states with new date range approach
+  const [activeRange, setActiveRange] = useState<PredefinedRange>('6m');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>(
+    calculateDateRange('6m')
+  );
   const [platform, setPlatform] = useState(platforms[0]);
   const [country, setCountry] = useState("GLOBAL");
   
   // Edit states
   const [editingMetric, setEditingMetric] = useState<any>(null);
   const [editingMetricType, setEditingMetricType] = useState<'social' | 'website' | 'newsletter' | 'engagement' | null>(null);
+  
+  // Function to handle predefined range selection
+  const handlePredefinedRangeSelect = (rangeKey: PredefinedRange) => {
+    setActiveRange(rangeKey);
+    if (rangeKey !== 'custom') {
+      const newRange = calculateDateRange(rangeKey);
+      setCustomDateRange(newRange);
+      handleFilterChange(newRange); // Trigger data fetch with new range
+    }
+  };
+
+  // Handle custom date range changes and trigger fetch
+  const handleCustomDateChange = (date: DateRange | undefined) => {
+    setCustomDateRange(date);
+    if (date?.from && date?.to) {
+      setActiveRange('custom'); // Set active range to custom
+      handleFilterChange(date);
+    }
+  };
   
   // Handle metric deletion
   const handleMetricDeleted = (id: number, type: 'social' | 'website' | 'newsletter' | 'engagement') => {
@@ -144,9 +197,11 @@ export function BusinessUnitClient({
     });
   };
   
-  // Handle filter changes
-  const handleFilterChange = async () => {
-    if (!dateRange.from || !dateRange.to) {
+  // Update filter change handler to accept date range parameter
+  const handleFilterChange = async (rangeToUse?: DateRange) => {
+    const currentRange = rangeToUse || customDateRange;
+    
+    if (!currentRange?.from || !currentRange?.to) {
       toast({
         title: "Date range required",
         description: "Please select a valid date range",
@@ -163,27 +218,27 @@ export function BusinessUnitClient({
         getSocialMetrics(
           platform as any,
           businessUnit as any,
-          dateRange.from,
-          dateRange.to,
+          currentRange.from,
+          currentRange.to,
           country
         ),
         getWebsiteMetrics(
           businessUnit as any,
-          dateRange.from,
-          dateRange.to,
+          currentRange.from,
+          currentRange.to,
           country
         ),
         getNewsletterMetrics(
           businessUnit as any,
-          dateRange.from,
-          dateRange.to,
+          currentRange.from,
+          currentRange.to,
           country
         ),
         getSocialEngagementMetrics(
           platform as any,
           businessUnit as any,
-          dateRange.from,
-          dateRange.to
+          currentRange.from,
+          currentRange.to
         ),
       ]);
       
@@ -276,11 +331,11 @@ export function BusinessUnitClient({
   const newsletterRecipientsData = processMonthlyData(data.newsletterMetrics, "recipients");
   const platformDistribution = processPlatformDistribution(data.socialMetrics);
   
-  // Calculate totals
-  const totalFollowers = data.socialMetrics.reduce((sum, metric) => sum + (metric.followers || 0), 0);
-  const totalImpressions = data.socialMetrics.reduce((sum, metric) => sum + (metric.impressions || 0), 0);
-  const totalWebsiteUsers = data.websiteMetrics.reduce((sum, metric) => sum + (metric.users || 0), 0);
-  const totalNewsletterRecipients = data.newsletterMetrics.reduce((sum, metric) => sum + (metric.recipients || 0), 0);
+  // // Calculate totals
+  // const totalFollowers = data.socialMetrics.reduce((sum, metric) => sum + (metric.followers || 0), 0);
+  // const totalImpressions = data.socialMetrics.reduce((sum, metric) => sum + (metric.impressions || 0), 0);
+  // const totalWebsiteUsers = data.websiteMetrics.reduce((sum, metric) => sum + (metric.users || 0), 0);
+  // const totalNewsletterRecipients = data.newsletterMetrics.reduce((sum, metric) => sum + (metric.recipients || 0), 0);
   
   // Define table columns
   const socialColumns: ColumnDef<SocialMetric>[] = [
@@ -456,15 +511,15 @@ export function BusinessUnitClient({
     },
   ];
   
-  // Format number for display
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
+  // // Format number for display
+  // const formatNumber = (num: number) => {
+  //   if (num >= 1000000) {
+  //     return (num / 1000000).toFixed(1) + 'M';
+  //   } else if (num >= 1000) {
+  //     return (num / 1000).toFixed(1) + 'K';
+  //   }
+  //   return num.toString();
+  // };
   
   return (
     <div className="space-y-6">
@@ -474,19 +529,65 @@ export function BusinessUnitClient({
           <CardDescription>Refine your business unit data</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 items-end">
+            {/* Date Range Selection */}
+            <div className="space-y-2 md:col-span-2">
               <label className="text-sm font-medium">Date Range</label>
-              <DatePickerWithRange 
-                date={dateRange} 
-                setDate={(date) => {
-                  if (date?.from && date?.to) {
-                    setDateRange({ from: date.from, to: date.to });
-                  }
-                }} 
-              />
+              <div className="flex flex-wrap gap-2">
+                {predefinedRanges.map((range) => (
+                  <Button
+                    key={range.value}
+                    variant={activeRange === range.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePredefinedRangeSelect(range.value)}
+                    className="flex-grow sm:flex-grow-0"
+                  >
+                    {range.label}
+                  </Button>
+                ))}
+                {activeRange === 'custom' && (
+                   <Popover>
+                     <PopoverTrigger asChild>
+                       <Button
+                         id="date"
+                         variant={"outline"}
+                         size="sm"
+                         className={cn(
+                           "w-[240px] justify-start text-left font-normal",
+                           !customDateRange && "text-muted-foreground"
+                         )}
+                       >
+                         <CalendarIcon className="mr-2 h-4 w-4" />
+                         {customDateRange?.from ? (
+                           customDateRange.to ? (
+                             <>
+                               {format(customDateRange.from, "LLL dd, y")} -{" "}
+                               {format(customDateRange.to, "LLL dd, y")}
+                             </>
+                           ) : (
+                             format(customDateRange.from, "LLL dd, y")
+                           )
+                         ) : (
+                           <span>Pick a date range</span>
+                         )}
+                       </Button>
+                     </PopoverTrigger>
+                     <PopoverContent className="w-auto p-0" align="start">
+                       <Calendar
+                         initialFocus
+                         mode="range"
+                         defaultMonth={customDateRange?.from}
+                         selected={customDateRange}
+                         onSelect={handleCustomDateChange}
+                         numberOfMonths={2}
+                       />
+                     </PopoverContent>
+                   </Popover>
+                )}
+              </div>
             </div>
             
+            {/* Platform Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Platform</label>
               <Select 
@@ -506,6 +607,7 @@ export function BusinessUnitClient({
               </Select>
             </div>
             
+            {/* Country Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Country</label>
               <Select 
@@ -527,8 +629,9 @@ export function BusinessUnitClient({
             </div>
           </div>
           
+          {/* Apply Filters Button */}
           <Button 
-            onClick={handleFilterChange} 
+            onClick={() => handleFilterChange()} 
             className="mt-4"
             disabled={isLoading}
           >
@@ -544,7 +647,7 @@ export function BusinessUnitClient({
         </CardContent>
       </Card>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Followers</CardTitle>
@@ -584,7 +687,7 @@ export function BusinessUnitClient({
             <p className="text-xs text-muted-foreground">Active subscribers</p>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
       
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
